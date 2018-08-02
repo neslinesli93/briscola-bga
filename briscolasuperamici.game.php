@@ -31,15 +31,13 @@ class BriscolaSuperamici extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
-        
-        self::initGameStateLabels( array( 
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
-        ) );        
+        self::initGameStateLabels( array(
+            "primoSemeGiocato" => 10,
+            "semeBriscola" => 11
+        ) );
+
+        $this->cards = self::getNew( "module.common.deck" );
+        $this->cards->init( "card" );
 	}
 	
     protected function getGameName( )
@@ -79,16 +77,37 @@ class BriscolaSuperamici extends Table
         
         /************ Start the game initialization *****/
 
-        // Init global values with their initial values
-        //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
-        
-        // Init game statistics
-        // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
-        //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
+        self::setGameStateInitialValue( 'primoSemeGiocato', 0 );
+        self::setGameStateInitialValue( 'semeBriscola', 0 );
 
-        // TODO: setup the initial game situation here
-       
+        // Create cards
+        $cards = array ();
+        foreach ( $this->colors as $color_id => $color ) {
+            // spade, heart, diamond, club
+            for ($value = 2; $value <= 11; $value ++) {
+                //  2, 3, 4, ... K, A
+
+                // Assegnare a 3 e Asso rispettivamente i valori 10 e 11
+                $valoreBriscola = $value;
+                if ($value == 3) {
+                    $valoreBriscola = 10;
+                } else if ($value == 10) {
+                    $valoreBriscola = 11;
+                }
+
+                $cards [] = array ('type' => $color_id,'type_arg' => $valoreBriscola,'nbr' => 1 );
+            }
+        }
+
+        $this->cards->createCards( $cards, 'deck' );
+
+        // Shuffle deck
+        $this->cards->shuffle('deck');
+        // Deal 3 cards to each players
+        $players = self::loadPlayersBasicInfos();
+        foreach ( $players as $player_id => $player ) {
+            $cards = $this->cards->pickCards(3, 'deck', $player_id);
+        }
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -108,15 +127,24 @@ class BriscolaSuperamici extends Table
     protected function getAllDatas()
     {
         $result = array();
-    
-        $current_player_id = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
+
+        // !! We must only return informations visible by this player !!
+        $current_player_id = self::getCurrentPlayerId();
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
-  
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+
+        // Gather all information about current game situation (visible by player $current_player_id).
+
+        // Cards in player hand
+        $result['hand'] = $this->cards->getCardsInLocation( 'hand', $current_player_id );
+
+        // Cards played on the table
+        $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
+
+        // TODO: Far vedere seme della briscola
   
         return $result;
     }
@@ -158,6 +186,27 @@ class BriscolaSuperamici extends Table
         (note: each method below must match an input method in briscolasuperamici.action.php)
     */
 
+    function playCard($card_id) {
+        self::checkAction("playCard");
+        $player_id = self::getActivePlayerId();
+        $this->cards->moveCard($card_id, 'cardsontable', $player_id);
+
+        $currentCard = $this->cards->getCard($card_id);
+        $currentTrickColor = self::getGameStateValue( 'trickColor' ) ;
+        if( $currentTrickColor == 0 ) {
+            self::setGameStateValue( 'primoSemeGiocato', $currentCard['type'] );
+        }
+
+        // And notify
+        self::notifyAllPlayers('playCard', clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}'), array (
+            'i18n' => array ('color_displayed','value_displayed' ),'card_id' => $card_id,'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),'value' => $currentCard ['type_arg'],
+            'value_displayed' => $this->values_label [$currentCard ['type_arg']],'color' => $currentCard ['type'],
+            'color_displayed' => $this->colors [$currentCard ['type']] ['name'] ));
+        // Next player
+        $this->gamestate->nextState('playCard');
+    }
+
     /*
     
     Example:
@@ -195,22 +244,9 @@ class BriscolaSuperamici extends Table
         game state.
     */
 
-    /*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
-    {
-        // Get some values from the current game situation in database...
-    
-        // return values:
-        return array(
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
-        );
-    }    
-    */
+    function argGiveCards() {
+        return array ();
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state actions
@@ -220,19 +256,175 @@ class BriscolaSuperamici extends Table
         Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
         The action method of state X is called everytime the current game state is set to X.
     */
-    
-    /*
-    
-    Example for game state "MyGameState":
 
-    function stMyGameState()
-    {
-        // Do some stuff ...
-        
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
+    function stNewHand() {
+        // Take back all cards (from any location => null) to deck
+        $this->cards->moveAllCardsInLocation(null, "deck");
+        $this->cards->shuffle('deck');
+        // Deal 3 cards to each players
+        // Create deck, shuffle it and give 3 initial cards
+        $players = self::loadPlayersBasicInfos();
+        foreach ( $players as $player_id => $player ) {
+            $cards = $this->cards->pickCards(3, 'deck', $player_id);
+            // Notify player about his cards
+            self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
+        }
+
+        $cards = $this->$cards->getCardsInLocation('deck');
+        $semeBriscola = array_values(array_slice(cards, -1))[0];
+        self::setGameStateValue('semeBriscola', $semeBriscola->type);
+
+        $this->gamestate->nextState("");
+    }
+
+    function stNewTrick() {
+        // Active the player who wins the last trick
+        // Reset trick color to 0 (= no color)
+        self::setGameStateInitialValue('primoSemeGiocato', 0);
+        $this->gamestate->nextState();
+    }
+
+    function stDrawCards() {
+        // Pesca le carte dal mazzo e le da' a ciascun giocatore
+        $players = self::loadPlayersBasicInfos();
+        foreach ( $players as $player_id => $player ) {
+//            $cards = $this->cards->pickCards(1, 'deck', $player_id);
+//            // Notify player about his cards
+//            self::notifyPlayer($player_id, 'newCard', '', array ('cards' => $cards ));
+            $card = $this->cards->pickCars('deck', $player_id);
+            // Notify player about his cards
+            self::notifyPlayer($player_id, 'newCard', '', $card);
+        }
+
+        $this->gamestate->nextState();
+    }
+
+    function stNextPlayer() {
+        // Active next player OR end the trick and go to the next trick OR end the hand
+        // TODO: Vedere quanti giocatori stanno giocando e selezionare il numero giusto
+        if ($this->cards->countCardInLocation('cardsontable') == 2) {
+            // This is the end of the trick
+            $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
+            $best_value = 0;
+            $best_value_player_id = null;
+            $currentTrickColor = self::getGameStateValue('primoSemeGiocato');
+            $semeBriscola = self::getGameStateValue('semeBriscola');
+
+            $semeCorrente = $currentTrickColor;
+            $primaBriscolaTrovata = false;
+            foreach ( $cards_on_table as $card ) {
+                if ($card ['type'] == $semeBriscola) {
+                    if (!$primaBriscolaTrovata) {
+                        $semeCorrente = $semeBriscola;
+                        // Note: location_arg = player who played this card on table
+                        $best_value_player_id = $card ['location_arg'];
+                        // Note: type_arg = value of the card
+                        $best_value = $card ['type_arg'];
+
+                        $primaBriscolaTrovata = true;
+                        continue;
+                    }
+                }
+
+                if ($card ['type'] == $semeCorrente) {
+                    if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
+                        // Note: location_arg = player who played this card on table
+                        $best_value_player_id = $card ['location_arg'];
+                        // Note: type_arg = value of the card
+                        $best_value = $card ['type_arg'];
+                    }
+                }
+            }
+
+            // Active this player => he's the one who starts the next trick
+            $this->gamestate->changeActivePlayer( $best_value_player_id );
+
+            // Move all cards to "cardswon" of the given player
+            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $best_value_player_id);
+
+            // Notify
+            // Note: we use 2 notifications here in order we can pause the display during the first notification
+            // before we move all cards to the winner (during the second)
+            $players = self::loadPlayersBasicInfos();
+            self::notifyAllPlayers( 'trickWin', clienttranslate('${player_name} wins the trick'), array(
+                'player_id' => $best_value_player_id,
+                'player_name' => $players[ $best_value_player_id ]['player_name']
+            ) );
+            self::notifyAllPlayers( 'giveAllCardsToPlayer','', array(
+                'player_id' => $best_value_player_id
+            ) );
+
+            // TODO: Se nel deck sono rimaste 0 carte, e si sta giocando
+            // in 4 giocatori, far vedere le carte ai compagni
+
+            if ($this->cards->countCardInLocation('hand') == 0) {
+                // End of the hand
+                $this->gamestate->nextState("endHand");
+            } else {
+                // End of the trick
+                if ($this->cards->countCardInLocation('deck') > 0) {
+                    $this->gamestate->nextState("drawCards");
+                } else {
+                    $this->gamestate->nextState("nextTrick");
+                }
+            }
+        } else {
+            // Standard case (not the end of the trick)
+            // => just active the next player
+            $player_id = self::activeNextPlayer();
+            self::giveExtraTime($player_id);
+            $this->gamestate->nextState('nextPlayer');
+        }
+    }
+
+    function stEndHand() {
+        // TODO: Conteggio dei punti
+        // Count and score points, then end the game or go to the next hand.
+        $players = self::loadPlayersBasicInfos();
+
+        $player_to_points = array ();
+        foreach ( $players as $player_id => $player ) {
+            $player_to_points [$player_id] = 0;
+        }
+        $cards = $this->cards->getCardsInLocation("cardswon");
+        foreach ( $cards as $card ) {
+            $player_id = $card ['location_arg'];
+            // Note: 2 = heart
+            if ($card ['type'] == 2) {
+                $player_to_points [$player_id] ++;
+            }
+        }
+        // Apply scores to player
+        foreach ( $player_to_points as $player_id => $points ) {
+            if ($points != 0) {
+                $sql = "UPDATE player SET player_score=player_score-$points  WHERE player_id='$player_id'";
+                self::DbQuery($sql);
+                $heart_number = $player_to_points [$player_id];
+                self::notifyAllPlayers("points", clienttranslate('${player_name} gets ${nbr} hearts and looses ${nbr} points'), array (
+                    'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'],
+                    'nbr' => $heart_number ));
+            } else {
+                // No point lost (just notify)
+                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any hearts'), array (
+                    'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'] ));
+            }
+        }
+        $newScores = self::getCollectionFromDb("SELECT player_id, player_score FROM player", true );
+        self::notifyAllPlayers( "newScores", '', array( 'newScores' => $newScores ) );
+
+        ///// Test if this is the end of the game
+        foreach ( $newScores as $player_id => $score ) {
+            if ($score <= -100) {
+                // Trigger the end of the game !
+                $this->gamestate->nextState("endGame");
+                return;
+            }
+        }
+
+
+        $this->gamestate->nextState("nextHand");
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
