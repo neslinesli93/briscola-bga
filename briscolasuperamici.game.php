@@ -135,8 +135,14 @@ class BriscolaSuperamici extends Table
         // Cards played on the table
         $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
 
-        // TODO: Remove this
-        $result['semeBriscola'] = self::getGameStateValue('semeBriscola');
+        $cards_on_table = $this->cards->getCardsInLocation('deck');
+        if (count($cards_on_table) > 0) {
+            $briscola = array_values(array_slice($cards_on_table, -1))[0];
+            $result['briscola'] = $briscola;
+        } else {
+            $result['briscola'] = null;
+        }
+
 
         // TODO: Far vedere seme della briscola
   
