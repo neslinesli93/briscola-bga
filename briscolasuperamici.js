@@ -85,6 +85,8 @@ function (dojo, declare) {
                 this.playCardOnTable(player_id, color, value, card.id);
             }
 
+            console.log(`LA BRISCOLA E': ${gamedatas.semeBriscola}`);
+
             dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
 
             // Setup game notifications to handle (see "setupNotifications" method below)
