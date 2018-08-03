@@ -43,11 +43,12 @@ function (dojo, declare) {
         
         setup: function( gamedatas )
         {
+
             // Setting up player boards
             for( var player_id in gamedatas.players )
             {
                 var player = gamedatas.players[player_id];
-                         
+
                 // TODO: Setting up players boards if needed
             }
 
@@ -55,22 +56,14 @@ function (dojo, declare) {
             this.playerHand = new ebg.stock(); // new stock object for hand
             this.playerHand.create( this, $('myhand'), this.cardwidth, this.cardheight );
 
-            // 3 images per row
-            this.playerHand.image_items_per_row = 3;
+            // 10 images per row
+            this.playerHand.image_items_per_row = 10;
 
             // Create cards types:
             for (var color = 1; color <= 4; color++) {
                 for (var value = 2; value <= 11; value++) {
-                    // Assegnare al 3 il valore 12 e all'asso il valore 13
-                    var valoreCarta = value;
-                    if (value === 3) {
-                        valoreCarta = 12;
-                    } else if (value === 11) {
-                        valoreCarta = 13;
-                    }
-
                     // Build card type id
-                    var card_type_id = this.getCardUniqueId(color, valoreCarta);
+                    var card_type_id = this.getCardUniqueId(color, value);
                     this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
                 }
             }
@@ -84,8 +77,8 @@ function (dojo, declare) {
             }
 
             // Cards played on table
-            for (i in this.gamedatas.cardsontable) {
-                var card = this.gamedatas.cardsontable[i];
+            for (var j in this.gamedatas.cardsontable) {
+                var card = this.gamedatas.cardsontable[j];
                 var color = card.type;
                 var value = card.type_arg;
                 var player_id = card.location_arg;
@@ -186,9 +179,8 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Utility methods
 
-        // Get card unique identifier based on its color and value
         getCardUniqueId : function(color, value) {
-            return (color - 1) * 13 + (value - 2);
+            return (color - 1) * 10 + (value - 2);
         },
 
         playCardOnTable : function(player_id, color, value, card_id) {

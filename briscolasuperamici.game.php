@@ -86,16 +86,7 @@ class BriscolaSuperamici extends Table
             // spade, heart, diamond, club
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 3, 4, ... K, A
-
-                // Assegnare al 3 il valore 12 e all'asso il valore 13
-                $valoreBriscola = $value;
-                if ($value == 3) {
-                    $valoreBriscola = 12;
-                } else if ($value == 11) {
-                    $valoreBriscola = 13;
-                }
-
-                $cards [] = array ('type' => $color_id,'type_arg' => $valoreBriscola,'nbr' => 1 );
+                $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1 );
             }
         }
 
@@ -281,7 +272,7 @@ class BriscolaSuperamici extends Table
         // Active the player who wins the last trick
         // Reset trick color to 0 (= no color)
         self::setGameStateInitialValue('primoSemeGiocato', 0);
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     function stDrawCards() {
@@ -296,7 +287,7 @@ class BriscolaSuperamici extends Table
             self::notifyPlayer($player_id, 'drawNewCard', '', array ('card' => $card ));
         }
 
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     function stNextPlayer() {
