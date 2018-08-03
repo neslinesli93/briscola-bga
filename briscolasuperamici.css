@@ -107,6 +107,13 @@
 
 /*** my hand ***/
 
+#myhand_wrap {
+    width: 235px;
+    display: block;
+    margin: auto;
+    text-align: center;
+}
+
 /*#myhand,*/
 /*#myhand_wrap {*/
     /*text-align: center;*/
