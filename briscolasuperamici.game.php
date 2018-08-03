@@ -300,7 +300,7 @@ class BriscolaSuperamici extends Table
             $best_value_player_id = null;
             $currentTrickColor = self::getGameStateValue('primoSemeGiocato');
             $semeBriscola = self::getGameStateValue('semeBriscola');
-            
+
             $briscolaTrovata = false;
             foreach ( $cards_on_table as $card ) {
                 if ($card ['type'] == $semeBriscola) {
@@ -327,6 +327,18 @@ class BriscolaSuperamici extends Table
                     }
                 }
             }
+
+//            if ($best_value_player_id === null) {
+//                self::error("Unexpected best_value_player_id = null");
+//                self::error("Now printing all the cards on the table");
+//
+//                self::error("Primo seme giocato: " . $currentTrickColor . " FINE!");
+//                self::error("Seme briscola: " . $semeBriscola . " FINE!");
+//
+//                foreach ( $cards_on_table as $card ) {
+//                    self::error("seme: " . $card['type'] . ", valore: " . $card['type_arg'] . " FINE!");
+//                }
+//            }
 
             // Active this player => he's the one who starts the next trick
             $this->gamestate->changeActivePlayer( $best_value_player_id );
@@ -355,7 +367,7 @@ class BriscolaSuperamici extends Table
             } else {
                 // End of the trick
                 if ($this->cards->countCardInLocation('deck') > 0) {
-                    $this->gamestate->nextState("drawCards");
+                    $this->gamestate->nextState("nextCards");
                 } else {
                     $this->gamestate->nextState("nextTrick");
                 }

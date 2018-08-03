@@ -102,7 +102,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "nextPlayer" => 32, "drawCards" => 31, "nextTrick" => 30, "endHand" => 40 )
+        "transitions" => array( "nextPlayer" => 32, "nextCards" => 31, "nextTrick" => 30, "endHand" => 40 )
     ),
 
     // End of the hand (scoring, etc...)
