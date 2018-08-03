@@ -270,9 +270,9 @@ class BriscolaSuperamici extends Table
             self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
         }
 
-        $cards = $this->$cards->getCardsInLocation('deck');
-        $semeBriscola = array_values(array_slice($cards, -1))[0];
-        self::setGameStateValue('semeBriscola', $semeBriscola->type);
+        $cards_on_table = $this->cards->getCardsInLocation('deck');
+        $briscola = array_values(array_slice($cards_on_table, -1))[0];
+        self::setGameStateValue('semeBriscola', $briscola ['type']);
 
         $this->gamestate->nextState("");
     }
