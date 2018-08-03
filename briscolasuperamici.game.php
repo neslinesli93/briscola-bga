@@ -85,7 +85,7 @@ class BriscolaSuperamici extends Table
         foreach ( $this->colors as $color_id => $color ) {
             // spade, heart, diamond, club
             for ($value = 2; $value <= 11; $value ++) {
-                //  2, 4, 5 ... 3, A
+                //  2, 3, 4, ... K, A
                 $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1 );
             }
         }
@@ -377,14 +377,39 @@ class BriscolaSuperamici extends Table
         foreach ( $players as $player_id => $player ) {
             $player_to_points [$player_id] = 0;
         }
+        
+        
         $cards = $this->cards->getCardsInLocation("cardswon");
         foreach ( $cards as $card ) {
             $player_id = $card ['location_arg'];
-            // Note: 2 = heart
+           /* // Note: 2 = heart
+           	Assegna 1 punto ad ogni carta di cuori 
             if ($card ['type'] == 2) {
                 $player_to_points [$player_id] ++;
+            } */
+            
+            /* 2  4  5  6  7  J  Q  K  3  A  */
+            /* 0  1  2  3  4  5  6  7  8  9  */
+            if ($card ['type_arg'] == 5) {
+            	/* Fante */
+            	$player_to_points [$player_id] += 2; 
+            } else if ($card ['type_arg'] == 6) {
+            	/* Cavallo */
+            	$player_to_points [$player_id] += 3; 
+            } else if ($card ['type_arg'] == 7) {
+            	/* Re */
+            	$player_to_points [$player_id] += 4; 
+            } else if ($card ['type_arg'] == 8) {
+            	/* Tre */
+            	$player_to_points [$player_id] += 10; 
+            } else if ($card ['type_arg'] == 9) {
+            	/* Asso */
+        		$player_to_points [$player_id] += 11; 
             }
         }
+        
+        
+        /* Questa parte non la tocco */
         // Apply scores to player
         foreach ( $player_to_points as $player_id => $points ) {
             if ($points != 0) {
@@ -404,6 +429,9 @@ class BriscolaSuperamici extends Table
         self::notifyAllPlayers( "newScores", '', array( 'newScores' => $newScores ) );
 
         ///// Test if this is the end of the game
+        /* Arrivo allo stato endHand sse 0 carte nel mazzo e 0 carte in mano, quindi il gioco è sempre concluso */
+        
+        /* 
         foreach ( $newScores as $player_id => $score ) {
             if ($score <= -100) {
                 // Trigger the end of the game !
@@ -411,9 +439,11 @@ class BriscolaSuperamici extends Table
                 return;
             }
         }
-
-
         $this->gamestate->nextState("nextHand");
+        */
+
+		$this->gamestate->nextState("endGame");
+
     }
 
 
