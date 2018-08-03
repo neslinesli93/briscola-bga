@@ -271,7 +271,7 @@ class BriscolaSuperamici extends Table
         }
 
         $cards = $this->$cards->getCardsInLocation('deck');
-        $semeBriscola = array_values(array_slice(cards, -1))[0];
+        $semeBriscola = array_values(array_slice($cards, -1))[0];
         self::setGameStateValue('semeBriscola', $semeBriscola->type);
 
         $this->gamestate->nextState("");
