@@ -301,32 +301,30 @@ class BriscolaSuperamici extends Table
             $currentTrickColor = self::getGameStateValue('primoSemeGiocato');
             $semeBriscola = self::getGameStateValue('semeBriscola');
 
-            $briscolaTrovata = false;
+            $semeCorrente = $currentTrickColor;
+            $primaBriscolaTrovata = false;
             foreach ( $cards_on_table as $card ) {
                 if ($card ['type'] == $semeBriscola) {
-                    $briscolaTrovata = true;
+                    if (!$primaBriscolaTrovata) {
+                        $semeCorrente = $semeBriscola;
+                        // Note: location_arg = player who played this card on table
+                        $best_value_player_id = $card ['location_arg'];
+                        // Note: type_arg = value of the card
+                        $best_value = $card ['type_arg'];
+                        $primaBriscolaTrovata = true;
+                        continue;
+                    }
                 }
-
-                // Note: type = card color
-                if ($card ['type'] == $currentTrickColor) {
+                if ($card ['type'] == $semeCorrente) {
                     if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
-                        $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
-                        $best_value = $card ['type_arg']; // Note: type_arg = value of the card
+                        // Note: location_arg = player who played this card on table
+                        $best_value_player_id = $card ['location_arg'];
+                        // Note: type_arg = value of the card
+                        $best_value = $card ['type_arg'];
                     }
                 }
             }
 
-            if ($briscolaTrovata) {
-                foreach ( $cards_on_table as $card ) {
-                    // Note: type = card color
-                    if ($card ['type'] == $semeBriscola) {
-                        if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
-                            $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
-                            $best_value = $card ['type_arg']; // Note: type_arg = value of the card
-                        }
-                    }
-                }
-            }
 
 //            if ($best_value_player_id === null) {
 //                self::error("Unexpected best_value_player_id = null");
