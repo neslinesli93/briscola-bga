@@ -279,9 +279,6 @@ class BriscolaSuperamici extends Table
         // Pesca le carte dal mazzo e le da' a ciascun giocatore
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-//            $cards = $this->cards->pickCards(1, 'deck', $player_id);
-//            // Notify player about his cards
-//            self::notifyPlayer($player_id, 'newCard', '', array ('cards' => $cards ));
             $card = $this->cards->pickCard('deck', $player_id);
             // Notify player about his cards
             self::notifyPlayer($player_id, 'drawNewCard', '', array ('card' => $card ));
