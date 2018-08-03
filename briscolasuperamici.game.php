@@ -293,7 +293,7 @@ class BriscolaSuperamici extends Table
 //            self::notifyPlayer($player_id, 'newCard', '', array ('cards' => $cards ));
             $card = $this->cards->pickCard('deck', $player_id);
             // Notify player about his cards
-            self::notifyPlayer($player_id, 'drawNewCard', '', $card);
+            self::notifyPlayer($player_id, 'drawNewCard', '', array ('card' => $card ));
         }
 
         $this->gamestate->nextState();
