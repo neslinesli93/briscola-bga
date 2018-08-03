@@ -300,29 +300,30 @@ class BriscolaSuperamici extends Table
             $best_value_player_id = null;
             $currentTrickColor = self::getGameStateValue('primoSemeGiocato');
             $semeBriscola = self::getGameStateValue('semeBriscola');
-
-            $semeCorrente = $currentTrickColor;
-            $primaBriscolaTrovata = false;
+            
+            $briscolaTrovata = false;
             foreach ( $cards_on_table as $card ) {
                 if ($card ['type'] == $semeBriscola) {
-                    if (!$primaBriscolaTrovata) {
-                        $semeCorrente = $semeBriscola;
-                        // Note: location_arg = player who played this card on table
-                        $best_value_player_id = $card ['location_arg'];
-                        // Note: type_arg = value of the card
-                        $best_value = $card ['type_arg'];
-
-                        $primaBriscolaTrovata = true;
-                        continue;
-                    }
+                    $briscolaTrovata = true;
                 }
 
-                if ($card ['type'] == $semeCorrente) {
+                // Note: type = card color
+                if ($card ['type'] == $currentTrickColor) {
                     if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
-                        // Note: location_arg = player who played this card on table
-                        $best_value_player_id = $card ['location_arg'];
-                        // Note: type_arg = value of the card
-                        $best_value = $card ['type_arg'];
+                        $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
+                        $best_value = $card ['type_arg']; // Note: type_arg = value of the card
+                    }
+                }
+            }
+
+            if ($briscolaTrovata) {
+                foreach ( $cards_on_table as $card ) {
+                    // Note: type = card color
+                    if ($card ['type'] == $semeBriscola) {
+                        if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
+                            $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
+                            $best_value = $card ['type_arg']; // Note: type_arg = value of the card
+                        }
                     }
                 }
             }
