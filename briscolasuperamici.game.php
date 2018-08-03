@@ -192,7 +192,7 @@ class BriscolaSuperamici extends Table
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
 
         $currentCard = $this->cards->getCard($card_id);
-        $currentTrickColor = self::getGameStateValue( 'trickColor' ) ;
+        $currentTrickColor = self::getGameStateValue( 'primoSemeGiocato' ) ;
         if( $currentTrickColor == 0 ) {
             self::setGameStateValue( 'primoSemeGiocato', $currentCard['type'] );
         }
@@ -291,7 +291,7 @@ class BriscolaSuperamici extends Table
 //            $cards = $this->cards->pickCards(1, 'deck', $player_id);
 //            // Notify player about his cards
 //            self::notifyPlayer($player_id, 'newCard', '', array ('cards' => $cards ));
-            $card = $this->cards->pickCars('deck', $player_id);
+            $card = $this->cards->pickCard('deck', $player_id);
             // Notify player about his cards
             self::notifyPlayer($player_id, 'drawNewCard', '', $card);
         }
