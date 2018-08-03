@@ -87,12 +87,12 @@ class BriscolaSuperamici extends Table
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 3, 4, ... K, A
 
-                // Assegnare a 3 e Asso rispettivamente i valori 10 e 11
+                // Assegnare al 3 il valore 12 e all'asso il valore 13
                 $valoreBriscola = $value;
                 if ($value == 3) {
-                    $valoreBriscola = 10;
-                } else if ($value == 10) {
-                    $valoreBriscola = 11;
+                    $valoreBriscola = 12;
+                } else if ($value == 11) {
+                    $valoreBriscola = 13;
                 }
 
                 $cards [] = array ('type' => $color_id,'type_arg' => $valoreBriscola,'nbr' => 1 );
@@ -293,7 +293,7 @@ class BriscolaSuperamici extends Table
 //            self::notifyPlayer($player_id, 'newCard', '', array ('cards' => $cards ));
             $card = $this->cards->pickCars('deck', $player_id);
             // Notify player about his cards
-            self::notifyPlayer($player_id, 'newCard', '', $card);
+            self::notifyPlayer($player_id, 'drawNewCard', '', $card);
         }
 
         $this->gamestate->nextState();
