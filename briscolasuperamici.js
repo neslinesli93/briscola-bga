@@ -63,7 +63,6 @@ function (dojo, declare) {
 
             // Create cards types:
             for (var color = 1; color <= 4; color++) {
-                // TODO: Rimetti value a 11
                 for (var value = 2; value <= 11; value++) {
                     // Build card type id
                     var card_type_id = this.getCardUniqueId(color, value);

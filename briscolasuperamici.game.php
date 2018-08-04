@@ -84,8 +84,7 @@ class BriscolaSuperamici extends Table
 
         // Prepare for choosing briscola
         $i = 0;
-//        $briscola_index = rand(0, 40 - 1);
-        $briscola_index = 0;
+        $briscola_index = rand(0, 40 - 1);
         $seme_briscola = null;
         $valore_briscola = null;
 
@@ -93,7 +92,6 @@ class BriscolaSuperamici extends Table
         $cards = array ();
         foreach ( $this->colors as $color_id => $color ) {
             // spade, heart, diamond, club
-            // TODO: Rimetti value a 11
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1);
@@ -363,8 +361,6 @@ class BriscolaSuperamici extends Table
             }
 
             $card = $this->cards->pickCard('deck', $player_id_give_card_to);
-            self::error("Now giving " . $card['type_arg'] . " of " . $card['type'] . " to " . $players[$player_id_give_card_to]['player_name'] . " FINE!");
-
             $remaining_cards = $cards_in_deck_count - $i - 1;
             if ($remaining_cards > 0) {
                 self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
@@ -383,8 +379,6 @@ class BriscolaSuperamici extends Table
             }
 
         }
-
-        self::error("==================");
 
         $this->gamestate->nextState("");
     }
