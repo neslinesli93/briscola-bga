@@ -32,17 +32,15 @@ $this->colors = array(
 
 $this->values_label = array(
     2 =>'2',
-    3 => '3',
-    4 => '4',
-    5 => '5',
-    6 => '6',
-    7 => '7',
-    8 => clienttranslate('J'),
-    9 => clienttranslate('Q'),
-    10 => clienttranslate('K'),
+    3 => '4',
+    4 => '5',
+    5 => '6',
+    6 => '7',
+    7 => clienttranslate('J'),
+    8 => clienttranslate('Q'),
+    9 => clienttranslate('K'),
+    10 => '3',
     11 => clienttranslate('A')
-//    12 => '3',
-//    13 => clienttranslate('A')
 );
 
 

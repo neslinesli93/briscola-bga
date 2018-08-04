@@ -33,11 +33,14 @@ class BriscolaSuperamici extends Table
         parent::__construct();
         self::initGameStateLabels( array(
             "primoSemeGiocato" => 10,
-            "semeBriscola" => 11
+            "semeBriscola" => 11,
+            "valoreBriscola" => 12
         ) );
 
         $this->cards = self::getNew( "module.common.deck" );
         $this->cards->init( "card" );
+
+        $this->briscola_location_arg = -1000;
 	}
 	
     protected function getGameName( )
@@ -78,26 +81,64 @@ class BriscolaSuperamici extends Table
         /************ Start the game initialization *****/
 
         self::setGameStateInitialValue( 'primoSemeGiocato', 0 );
-        self::setGameStateInitialValue( 'semeBriscola', 0 );
+
+        // Prepare for choosing briscola
+        $i = 0;
+//        $briscola_index = rand(0, 40 - 1);
+        $briscola_index = 0;
+        $seme_briscola = null;
+        $valore_briscola = null;
 
         // Create cards
         $cards = array ();
         foreach ( $this->colors as $color_id => $color ) {
             // spade, heart, diamond, club
+            // TODO: Rimetti value a 11
             for ($value = 2; $value <= 11; $value ++) {
-                //  2, 3, 4, ... K, A
-                $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1 );
+                //  2, 4, 5 ... K, 3, A
+                $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1);
+
+                if ($i == $briscola_index) {
+                    $seme_briscola = $color_id;
+                    $valore_briscola = $value;
+
+                    self::setGameStateInitialValue( 'semeBriscola', $seme_briscola );
+                    self::setGameStateInitialValue( 'valoreBriscola', $valore_briscola );
+                }
+
+                $i++;
             }
         }
 
-        $this->cards->createCards( $cards, 'deck' );
+        $this->cards->createCards( $cards, 'deck');
 
         // Shuffle deck
         $this->cards->shuffle('deck');
+
         // Deal 3 cards to each players
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $cards = $this->cards->pickCards(3, 'deck', $player_id);
+            $canGoToNextPlayer = false;
+            while (!$canGoToNextPlayer) {
+                $drawnCards = $this->cards->pickCards(3, 'deck', $player_id);
+
+                $cardsOk = true;
+                foreach( $drawnCards as $card_id => $card) {
+                    if ($card['type'] == $seme_briscola && $card['type_arg'] == $valore_briscola) {
+                        $cardsOk = false;
+                        break;
+                    }
+                }
+
+                if ($cardsOk) {
+                    $canGoToNextPlayer = true;
+                } else {
+                    foreach( $drawnCards as $card_id => $card) {
+                        $this->cards->moveCard($card_id, 'deck');
+                    }
+                }
+            }
+
         }
 
         // Activate first player (which is in general a good idea :) )
@@ -135,11 +176,20 @@ class BriscolaSuperamici extends Table
         // Cards played on the table
         $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
 
-        $cards_on_table = $this->cards->getCardsInLocation('deck');
-        if (count($cards_on_table) > 0) {
-            $briscola = array_values(array_slice($cards_on_table, -1))[0];
-            $result['briscola'] = $briscola;
+        $cards_in_deck = $this->cards->getCardsInLocation('deck');
+        $semeBriscola = self::getGameStateValue( 'semeBriscola' );
+        $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
+        if (count($cards_in_deck) > 0) {
+            $result['cardsindeck'] = count($cards_in_deck) - 1;
+            foreach ( $cards_in_deck as $card_id => $card ) {
+                if ($card['type'] == $semeBriscola && $card['type_arg'] == $valoreBriscola) {
+                    $result['briscola'] = $card;
+                    break;
+                }
+            }
+
         } else {
+            $result['cardsindeck'] = 0;
             $result['briscola'] = null;
         }
 
@@ -261,6 +311,12 @@ class BriscolaSuperamici extends Table
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, "deck");
         $this->cards->shuffle('deck');
+
+        $semeBriscola = self::getGameStateValue( 'semeBriscola' );
+        $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
+        $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_type='$semeBriscola' and card_type_arg='$valoreBriscola'";
+        self::DbQuery($sql);
+
         // Deal 3 cards to each players
         // Create deck, shuffle it and give 3 initial cards
         $players = self::loadPlayersBasicInfos();
@@ -269,10 +325,6 @@ class BriscolaSuperamici extends Table
             // Notify player about his cards
             self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
         }
-
-        $cards_on_table = $this->cards->getCardsInLocation('deck');
-        $briscola = array_values(array_slice($cards_on_table, -1))[0];
-        self::setGameStateValue('semeBriscola', $briscola ['type']);
 
         $this->gamestate->nextState("");
     }
@@ -285,13 +337,54 @@ class BriscolaSuperamici extends Table
     }
 
     function stDrawCards() {
-        // Pesca le carte dal mazzo e le da' a ciascun giocatore
+        // Pesca le carte dal mazzo e le da' a ciascun giocatore.
+        // Anziche' implementare un giro effettivo di pescate (come la briscola offline),
+        // facciamo pescare a tutti la prima carta nel deck, tranne quando l'ultimo deve pescare la briscola
         $players = self::loadPlayersBasicInfos();
-        foreach ( $players as $player_id => $player ) {
-            $card = $this->cards->pickCard('deck', $player_id);
-            // Notify player about his cards
-            self::notifyPlayer($player_id, 'drawNewCard', '', array ('card' => $card ));
+        $number_of_players = count($players);
+        $last_winner_id = self::getActivePlayerId();
+
+        $cards_in_deck_count = $this->cards->countCardInLocation('deck');
+        $last_winner_position = $players[$last_winner_id]['player_no'];
+        for ($i = 0; $i < $number_of_players; $i++) {
+            $player_id_give_card_to = null;
+            foreach ( $players as $player_id => $player ) {
+                $current_player_position = $players[$player_id]['player_no'];
+
+                $next_player_position = $last_winner_position + $i;
+                if ($next_player_position > $number_of_players) {
+                    $next_player_position = $next_player_position % $number_of_players;
+                }
+
+                if ($current_player_position == $next_player_position) {
+                    $player_id_give_card_to = $player_id;
+                    break;
+                }
+            }
+
+            $card = $this->cards->pickCard('deck', $player_id_give_card_to);
+            self::error("Now giving " . $card['type_arg'] . " of " . $card['type'] . " to " . $players[$player_id_give_card_to]['player_name'] . " FINE!");
+
+            $remaining_cards = $cards_in_deck_count - $i - 1;
+            if ($remaining_cards > 0) {
+                self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
+                    'card' => $card,
+                    'deck_index_to_pick'=> $cards_in_deck_count - 1,
+                    'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
+                    'decks_to_delete' => $number_of_players,
+                    'remaining_cards_deck_label' => max($cards_in_deck_count - $number_of_players - 1, 0)));
+            } else {
+                self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
+                    'card' => $card,
+                    'deck_index_to_pick'=> 0,
+                    'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
+                    'decks_to_delete' => $number_of_players,
+                    'remaining_cards_deck_label' => 0));
+            }
+
         }
+
+        self::error("==================");
 
         $this->gamestate->nextState("");
     }
@@ -330,19 +423,6 @@ class BriscolaSuperamici extends Table
                     }
                 }
             }
-
-
-//            if ($best_value_player_id === null) {
-//                self::error("Unexpected best_value_player_id = null");
-//                self::error("Now printing all the cards on the table");
-//
-//                self::error("Primo seme giocato: " . $currentTrickColor . " FINE!");
-//                self::error("Seme briscola: " . $semeBriscola . " FINE!");
-//
-//                foreach ( $cards_on_table as $card ) {
-//                    self::error("seme: " . $card['type'] . ", valore: " . $card['type_arg'] . " FINE!");
-//                }
-//            }
 
             // Active this player => he's the one who starts the next trick
             $this->gamestate->changeActivePlayer( $best_value_player_id );

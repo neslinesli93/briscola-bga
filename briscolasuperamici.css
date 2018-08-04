@@ -105,6 +105,38 @@
     background-image: url('img/cards.jpg');
 }
 
+/*** deck ***/
+
+.mydeck {
+    width: 72px;
+    height: 108px;
+    position: absolute;
+    top: 130px;
+    left: 10%;
+    background-image: url('img/deck.jpg');
+}
+
+#remainingcards_wrap {
+    width: 72px; /* same as .mydeck */
+    position: absolute; /* same as .mydeck */
+    left: 10%; /* same as .mydeck */
+    top: calc(130px - 24px); /* same as .mydeck, minus something */
+    text-align: center;
+    font-size: 24px;
+}
+
+#remainingcards_wrap h4 {
+    margin-top: 0;
+}
+
+/*** briscola ***/
+
+#briscola_wrap {
+    position: absolute;
+    top: 136px;
+    left: 20%;
+}
+
 /*** my hand ***/
 
 #myhand_wrap {
@@ -113,14 +145,3 @@
     margin: auto;
     text-align: center;
 }
-
-/*#myhand,*/
-/*#myhand_wrap {*/
-    /*text-align: center;*/
-/*}*/
-
-/*.stockitem {*/
-    /*display: inline-block !important;*/
-    /*position: static !important;*/
-    /*margin: 0 0.5rem !important;*/
-/*}*/

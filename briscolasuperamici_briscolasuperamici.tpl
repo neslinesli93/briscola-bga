@@ -23,6 +23,13 @@
     </div>
     <!-- END player -->
 
+    <div id="mydeck_wrap">
+    </div>
+    <div id="remainingcards_wrap">
+    </div>
+    <div id="briscola_wrap">
+    </div>
+
 </div>
 
 <div id="myhand_wrap" class="whiteblock">
@@ -36,6 +43,8 @@
 // Javascript HTML templates
 
 var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
+var jstpl_mydeck = '<div class="mydeck" id="mydeck_${deckid}"></div>';
+var jstpl_remaining_cards = '<div id="remainingcards"><h4>${remainingcards}</h4></div>';
 
 </script>  
 

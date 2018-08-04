@@ -43,14 +43,8 @@ function (dojo, declare) {
         
         setup: function( gamedatas )
         {
-
-            // Setting up player boards
-            for( var player_id in gamedatas.players )
-            {
-                var player = gamedatas.players[player_id];
-
-                // TODO: Setting up players boards if needed
-            }
+            console.log('GAMEDATAS');
+            console.log(gamedatas);
 
             // Player hand
             this.playerHand = new ebg.stock(); // new stock object for hand
@@ -59,13 +53,33 @@ function (dojo, declare) {
             // 10 images per row
             this.playerHand.image_items_per_row = 10;
 
+            // Piazza la briscola in tavola
+            var briscola = gamedatas.briscola;
+            if (briscola) {
+                this.briscolaCard = new ebg.stock(); // new stock object for hand
+                this.briscolaCard.create( this, $('briscola_wrap'), this.cardwidth, this.cardheight );
+                this.briscolaCard.image_items_per_row = 10;
+            }
+
             // Create cards types:
             for (var color = 1; color <= 4; color++) {
+                // TODO: Rimetti value a 11
                 for (var value = 2; value <= 11; value++) {
                     // Build card type id
                     var card_type_id = this.getCardUniqueId(color, value);
                     this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+
+                    if (briscola) {
+                        this.briscolaCard.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                    }
                 }
+            }
+
+            // Briscola in tavola
+            if (briscola) {
+                var color = briscola.type;
+                var value = briscola.type_arg;
+                this.briscolaCard.addToStockWithId(this.getCardUniqueId(color, value), briscola.id);
             }
 
             // Cards in player's hand
@@ -85,7 +99,19 @@ function (dojo, declare) {
                 this.playCardOnTable(player_id, color, value, card.id);
             }
 
-            console.log(`LA BRISCOLA E': ${gamedatas.semeBriscola}`);
+            // Crea tanti deck quante sono le carte da pescare
+            for (var k = 1; k <= gamedatas.cardsindeck; k++) {
+                dojo.place(this.format_block('jstpl_mydeck', {
+                    deckid: k
+                }), 'mydeck_wrap');
+            }
+
+            // Inserisce numero carte rimanenti
+            if (gamedatas.cardsindeck) {
+                dojo.place(this.format_block('jstpl_remaining_cards', {
+                    remainingcards: gamedatas.cardsindeck
+                }), 'remainingcards_wrap');
+            }
 
             dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
 
@@ -299,10 +325,53 @@ function (dojo, declare) {
         },
 
         notif_drawNewCard: function(notif) {
+            var self = this;
+            console.log('WEEEEEEEEEEEEE');
+            console.log(notif.args);
+
+            // Variabili riguardanti animazione della pescata
+            var deck_index_to_pick = notif.args.deck_index_to_pick;
+            var deck_index_to_start_delete_from = notif.args.deck_index_to_start_delete_from;
+            var decks_to_delete = notif.args.decks_to_delete;
+            var remaining_cards_deck_label = notif.args.remaining_cards_deck_label;
+
+            // Variabili riguardanti la carta pescata
             var card = notif.args.card;
             var color = card.type;
             var value = card.type_arg;
-            this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id);
+
+            // Se deck_index_to_pick e' 0, pescare la briscola!
+            if (deck_index_to_pick == 0) {
+                var anim = this.slideToObject('briscola_wrap', 'myhand');
+            } else {
+                var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
+            }
+
+            dojo.connect(anim, 'onEnd', function(node) {
+                dojo.destroy(node);
+
+                // Togli carte dal deck
+                for (var i = deck_index_to_start_delete_from; i > deck_index_to_start_delete_from - decks_to_delete; i--) {
+                    if (i == 0) {
+                        // Destroy the briscola and exit
+                        dojo.destroy('briscola_wrap');
+                        break;
+                    }
+
+                    dojo.destroy('mydeck_' + i);
+                }
+
+                // Aggiorna carte rimanenti
+                dojo.destroy('remainingcards');
+                if (remaining_cards_deck_label > 0) {
+                    dojo.place(self.format_block('jstpl_remaining_cards', {
+                        remainingcards: remaining_cards_deck_label
+                    }), 'remainingcards_wrap');
+                }
+
+                self.playerHand.addToStockWithId(self.getCardUniqueId(color, value), card.id);
+            });
+            anim.play();
         },
 
         notif_newScores : function(notif) {
