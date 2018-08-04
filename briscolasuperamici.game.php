@@ -81,12 +81,8 @@ class BriscolaSuperamici extends Table
         /************ Start the game initialization *****/
 
         self::setGameStateInitialValue( 'primoSemeGiocato', 0 );
-
-        // Prepare for choosing briscola
-        $i = 0;
-        $briscola_index = rand(0, 40 - 1);
-        $seme_briscola = null;
-        $valore_briscola = null;
+        self::setGameStateInitialValue( 'semeBriscola', 0 );
+        self::setGameStateInitialValue( 'valoreBriscola', 0 );
 
         // Create cards
         $cards = array ();
@@ -95,16 +91,6 @@ class BriscolaSuperamici extends Table
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1);
-
-                if ($i == $briscola_index) {
-                    $seme_briscola = $color_id;
-                    $valore_briscola = $value;
-
-                    self::setGameStateInitialValue( 'semeBriscola', $seme_briscola );
-                    self::setGameStateInitialValue( 'valoreBriscola', $valore_briscola );
-                }
-
-                $i++;
             }
         }
 
@@ -116,27 +102,7 @@ class BriscolaSuperamici extends Table
         // Deal 3 cards to each players
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $canGoToNextPlayer = false;
-            while (!$canGoToNextPlayer) {
-                $drawnCards = $this->cards->pickCards(3, 'deck', $player_id);
-
-                $cardsOk = true;
-                foreach( $drawnCards as $card_id => $card) {
-                    if ($card['type'] == $seme_briscola && $card['type_arg'] == $valore_briscola) {
-                        $cardsOk = false;
-                        break;
-                    }
-                }
-
-                if ($cardsOk) {
-                    $canGoToNextPlayer = true;
-                } else {
-                    foreach( $drawnCards as $card_id => $card) {
-                        $this->cards->moveCard($card_id, 'deck');
-                    }
-                }
-            }
-
+            $this->cards->pickCards(3, 'deck', $player_id);
         }
 
         // Activate first player (which is in general a good idea :) )
@@ -175,10 +141,11 @@ class BriscolaSuperamici extends Table
         $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
 
         $cards_in_deck = $this->cards->getCardsInLocation('deck');
-        $semeBriscola = self::getGameStateValue( 'semeBriscola' );
-        $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
         if (count($cards_in_deck) > 0) {
             $result['cardsindeck'] = count($cards_in_deck) - 1;
+
+            $semeBriscola = self::getGameStateValue( 'semeBriscola' );
+            $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
             foreach ( $cards_in_deck as $card_id => $card ) {
                 if ($card['type'] == $semeBriscola && $card['type_arg'] == $valoreBriscola) {
                     $result['briscola'] = $card;
@@ -310,8 +277,14 @@ class BriscolaSuperamici extends Table
         $this->cards->moveAllCardsInLocation(null, "deck");
         $this->cards->shuffle('deck');
 
-        $semeBriscola = self::getGameStateValue( 'semeBriscola' );
-        $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
+        // Choose briscola
+        $briscola = current($this->cards->getCardsInLocation('deck'));
+        $semeBriscola = $briscola['type'];
+        $valoreBriscola = $briscola['type_arg'];
+
+        self::setGameStateValue( 'semeBriscola', $semeBriscola );
+        self::setGameStateValue( 'valoreBriscola', $valoreBriscola );
+
         $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_type='$semeBriscola' and card_type_arg='$valoreBriscola'";
         self::DbQuery($sql);
 
@@ -504,7 +477,7 @@ class BriscolaSuperamici extends Table
         // Apply scores to player
         foreach ( $player_to_points as $player_id => $points ) {
             if ($points != 0) {
-                $sql = "UPDATE player SET player_score=player_score-$points  WHERE player_id='$player_id'";
+                $sql = "UPDATE player SET player_score=player_score+$points  WHERE player_id='$player_id'";
                 self::DbQuery($sql);
                 $heart_number = $player_to_points [$player_id];
                 self::notifyAllPlayers("points", clienttranslate('${player_name} gets ${nbr} hearts and looses ${nbr} points'), array (
