@@ -453,20 +453,20 @@ class BriscolaSuperamici extends Table
             } */
             
             /* 2  4  5  6  7  J  Q  K  3  A  */
-            /* 0  1  2  3  4  5  6  7  8  9  */
-            if ($card ['type_arg'] == 5) {
-            	/* Fante */
+            /* 2  3  4  5  6  7  8  9  10 11  */
+            if ($card ['type_arg'] == 7) {
+            	/* J */
             	$player_to_points [$player_id] += 2; 
-            } else if ($card ['type_arg'] == 6) {
-            	/* Cavallo */
-            	$player_to_points [$player_id] += 3; 
-            } else if ($card ['type_arg'] == 7) {
-            	/* Re */
-            	$player_to_points [$player_id] += 4; 
             } else if ($card ['type_arg'] == 8) {
+            	/* Q */
+            	$player_to_points [$player_id] += 3; 
+            } else if ($card ['type_arg'] == 9) {
+            	/* K */
+            	$player_to_points [$player_id] += 4; 
+            } else if ($card ['type_arg'] == 10) {
             	/* Tre */
             	$player_to_points [$player_id] += 10; 
-            } else if ($card ['type_arg'] == 9) {
+            } else if ($card ['type_arg'] == 11) {
             	/* Asso */
         		$player_to_points [$player_id] += 11; 
             }
