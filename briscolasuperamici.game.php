@@ -31,16 +31,24 @@ class BriscolaSuperamici extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
+
         self::initGameStateLabels( array(
             "primoSemeGiocato" => 10,
             "semeBriscola" => 11,
             "valoreBriscola" => 12
         ) );
 
+        // Init $this->cards to be a deck
         $this->cards = self::getNew( "module.common.deck" );
         $this->cards->init( "card" );
 
+        // Assign a big negative value to briscola card, so that it's drawn as last card
         $this->briscola_location_arg = -1000;
+
+        // Various points related stuff
+        $this->draw_score = 60;
+        $this->minimum_winning_score = 61;
+        $this->winning_hands_to_end_game = 3;
 	}
 	
     protected function getGameName( )
@@ -249,12 +257,18 @@ class BriscolaSuperamici extends Table
         }
 
         // And notify
-        self::notifyAllPlayers('playCard', clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}'), array (
-            'i18n' => array ('color_displayed','value_displayed' ),'card_id' => $card_id,'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),'value' => $currentCard ['type_arg'],
-            'value_displayed' => $this->values_label [$currentCard ['type_arg']],'color' => $currentCard ['type'],
-            'color_displayed' => $this->colors [$currentCard ['type']] ['name'] ));
-        // Next player
+        self::notifyAllPlayers('playCard', clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}'),
+            array (
+            'i18n' => array ('color_displayed','value_displayed' ),
+            'card_id' => $card_id,
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),
+            'value' => $currentCard ['type_arg'],
+            'value_displayed' => $this->values_label [$currentCard ['type_arg']],
+            'color' => $currentCard ['type'],
+            'color_displayed' => $this->colors [$currentCard ['type']] ['name']
+            ));
+
         $this->gamestate->nextState('playCard');
     }
 
@@ -445,8 +459,9 @@ class BriscolaSuperamici extends Table
                 'player_id' => $best_value_player_id
             ) );
 
-            // TODO: Se nel deck sono rimaste 0 carte, e si sta giocando
-            // in 4 giocatori, far vedere le carte ai compagni
+
+            // TODO: If there are 4 players, and there are 0 cards in the deck,
+            // we need to show each other' cards to companions.
 
             if ($this->cards->countCardInLocation('hand') == 0) {
                 // End of the hand
@@ -469,7 +484,6 @@ class BriscolaSuperamici extends Table
     }
 
     function stEndHand() {
-        // TODO: Conteggio dei punti
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
 
@@ -482,14 +496,14 @@ class BriscolaSuperamici extends Table
         $cards = $this->cards->getCardsInLocation("cardswon");
         foreach ( $cards as $card ) {
             $player_id = $card ['location_arg'];
-           /* // Note: 2 = heart
-           	Assegna 1 punto ad ogni carta di cuori 
-            if ($card ['type'] == 2) {
-                $player_to_points [$player_id] ++;
-            } */
-            
-            /* 2  4  5  6  7  J  Q  K  3  A  */
-            /* 2  3  4  5  6  7  8  9  10 11  */
+
+            /**
+             * Summary of briscola's rules
+             *
+             * Cards nominal values:    2  4  5  6  7  J  Q  K  3  A
+             * Cards internal values:   2  3  4  5  6  7  8  9  10 11
+             * Cards points:            0  0  0  0  0  2  3  4  10 11
+             */
             if ($card ['type_arg'] == 7) {
             	/* J */
             	$player_to_points [$player_id] += 2; 
@@ -507,45 +521,82 @@ class BriscolaSuperamici extends Table
         		$player_to_points [$player_id] += 11; 
             }
         }
+
+        // TODO: Add team logic when dealing with 4 players
         
-        
-        /* Questa parte non la tocco */
-        // Apply scores to player
+        // Notify score to players
         foreach ( $player_to_points as $player_id => $points ) {
-            if ($points != 0) {
-                $sql = "UPDATE player SET player_score=player_score+$points  WHERE player_id='$player_id'";
+            self::notifyAllPlayers("points", clienttranslate('${player_name} makes ${points} points'), array (
+                'player_id' => $player_id,
+                'player_name' => $players [$player_id] ['player_name'],
+                'points' => $points ));
+        }
+
+        // Apply score to players and notify hand winner or draw
+        foreach ( $player_to_points as $player_id => $points ) {
+            if ($points >= $this->minimum_winning_score) {
+                $sql = "UPDATE player SET player_score=player_score+1  WHERE player_id='$player_id'";
                 self::DbQuery($sql);
-                $heart_number = $player_to_points [$player_id];
-                self::notifyAllPlayers("points", clienttranslate('${player_name} gets ${nbr} hearts and looses ${nbr} points'), array (
-                    'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'],
-                    'nbr' => $heart_number ));
-            } else {
-                // No point lost (just notify)
-                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any hearts'), array (
-                    'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'] ));
+
+                self::notifyAllPlayers("points", clienttranslate('${player_name} wins the hand'), array (
+                    'player_id' => $player_id,
+                    'player_name' => $players [$player_id] ['player_name']));
+            } else if ($points == $this->draw_score) {
+                self::notifyAllPlayers("points", clienttranslate('Draw!'));
             }
         }
+
         $newScores = self::getCollectionFromDb("SELECT player_id, player_score FROM player", true );
         self::notifyAllPlayers( "newScores", '', array( 'newScores' => $newScores ) );
 
-        ///// Test if this is the end of the game
-        /* Arrivo allo stato endHand sse 0 carte nel mazzo e 0 carte in mano, quindi il gioco è sempre concluso */
-        
-        /* 
-        foreach ( $newScores as $player_id => $score ) {
-            if ($score <= -100) {
+        // Display table window with results
+
+        $table = array();
+
+        // Header line
+        $firstRow = array( '' );
+        foreach( $players as $player_id => $player ) {
+            $firstRow[] = array(
+                'str' => '${player_name}',
+                'args' => array( 'player_name' => $player['player_name'] ),
+                'type' => 'header'
+            );
+        }
+        $table[] = $firstRow;
+
+        // Points
+        $newRow = array( array( 'str' => clienttranslate('Current game points'), 'args' => array() ) );
+        foreach( $player_to_points as $player_id => $points ) {
+            $newRow[] = $points;
+        }
+        $table[] = $newRow;
+
+        // Final score
+        $newRow = array( array( 'str' => clienttranslate('Overall score'), 'args' => array() ) );
+        foreach( $newScores as $player_id => $score ) {
+            $newRow[] = "<b>" . $score . "</b>";
+        }
+        $table[] = $newRow;
+
+        $this->notifyAllPlayers( "tableWindow", '', array(
+            "id" => 'finalScoring',
+            "title" => clienttranslate("Result of this hand"),
+            "table" => $table,
+            "closing" => "Ok"
+        ) );
+
+        // End game
+        foreach( $newScores as $player_id => $score ) {
+            if( $score >= $this->winning_hands_to_end_game ) {
                 // Trigger the end of the game !
                 $this->gamestate->nextState("endGame");
                 return;
             }
         }
+
+        // Otherwise... new hand !
         $this->gamestate->nextState("nextHand");
-        */
-
-		$this->gamestate->nextState("endGame");
-
     }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie

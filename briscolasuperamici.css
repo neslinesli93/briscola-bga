@@ -46,14 +46,6 @@
 
 /********* You can start writing your CSS below this line: **********/
 
-.playertablecard {
-    display: inline-block;
-    position: relative;
-    margin-top: 5px;
-    width: 72px;
-    height: 96px;
-}
-
 /** Table layout **/
 
 #playertables {
@@ -62,22 +54,19 @@
     height: 340px;
 }
 
+.playertablecard {
+    display: inline-block;
+    position: relative;
+    margin-top: 5px;
+    width: 72px;
+    height: 96px;
+}
+
 .playertablename {
     font-weight: bold;
 }
 
-/*** My CSS for player table ***/
-
-/*.playertable {*/
-    /*display: block;*/
-    /*margin-left: auto;*/
-    /*margin-right: auto;*/
-    /*text-align: center;*/
-    /*width: 180px;*/
-    /*height: 130px;*/
-/*}*/
-
-/*** Hearts CSS for player table ***/
+/*** Single player table ***/
 .playertable {
     position: absolute;
     text-align: center;
@@ -107,7 +96,7 @@
 }
 
 
-/*** cards on table ***/
+/*** Cards on table ***/
 
 .cardontable {
     position: absolute;
@@ -116,7 +105,7 @@
     background-image: url('img/cards.jpg');
 }
 
-/*** deck ***/
+/*** Deck ***/
 
 .mydeck {
     width: 72px;
@@ -140,7 +129,7 @@
     margin-top: 0;
 }
 
-/*** briscola ***/
+/*** Briscola ***/
 
 #briscola_wrap {
     position: absolute;
@@ -148,11 +137,18 @@
     left: 20%;
 }
 
-/*** my hand ***/
+/*** My hand ***/
 
 #myhand_wrap {
     width: 235px;
     display: block;
     margin: auto;
     text-align: center;
+}
+
+/*** Misc ***/
+
+.tableWindow table {
+    width: 100% !important;
+    text-align: left !important;
 }

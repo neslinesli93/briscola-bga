@@ -53,7 +53,7 @@ function (dojo, declare) {
             // 10 images per row
             this.playerHand.image_items_per_row = 10;
 
-            // Piazza la briscola in tavola
+            // Create a custom deck just to hold briscola
             var briscola = gamedatas.briscola;
             if (briscola) {
                 this.briscolaCard = new ebg.stock(); // new stock object for hand
@@ -65,20 +65,14 @@ function (dojo, declare) {
             for (var color = 1; color <= 4; color++) {
                 for (var value = 2; value <= 11; value++) {
                     // Build card type id
+                    // N.B: Cards are not sorted when in player's hand! Order is just random
                     var card_type_id = this.getCardUniqueId(color, value);
-                    this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                    this.playerHand.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
 
                     if (briscola) {
-                        this.briscolaCard.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                        this.briscolaCard.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
                     }
                 }
-            }
-
-            // Briscola in tavola
-            if (briscola) {
-                var color = briscola.type;
-                var value = briscola.type_arg;
-                this.briscolaCard.addToStockWithId(this.getCardUniqueId(color, value), briscola.id);
             }
 
             // Cards in player's hand
@@ -98,19 +92,8 @@ function (dojo, declare) {
                 this.playCardOnTable(player_id, color, value, card.id);
             }
 
-            // Crea tanti deck quante sono le carte da pescare
-            for (var k = 1; k <= gamedatas.cardsindeck; k++) {
-                dojo.place(this.format_block('jstpl_mydeck', {
-                    deckid: k
-                }), 'mydeck_wrap');
-            }
-
-            // Inserisce numero carte rimanenti
-            if (gamedatas.cardsindeck) {
-                dojo.place(this.format_block('jstpl_remaining_cards', {
-                    remainingcards: gamedatas.cardsindeck
-                }), 'remainingcards_wrap');
-            }
+            // Show deck on the table
+            this.buildDeckOnTable(gamedatas);
 
             dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
 
@@ -235,6 +218,29 @@ function (dojo, declare) {
             this.slideToObject('cardontable_' + player_id, 'playertablecard_' + player_id).play();
         },
 
+        buildDeckOnTable: function(gamedatas) {
+            // Create as many deck cards as there are cards to be drawn
+            for (var k = 1; k <= gamedatas.cardsindeck; k++) {
+                dojo.place(this.format_block('jstpl_mydeck', {
+                    deckid: k
+                }), 'mydeck_wrap');
+            }
+
+            // Add deck's remaining cards label
+            if (gamedatas.cardsindeck) {
+                dojo.place(this.format_block('jstpl_remaining_cards', {
+                    remainingcards: gamedatas.cardsindeck
+                }), 'remainingcards_wrap');
+            }
+
+            // Finally, add briscola if present
+            var briscola = gamedatas.briscola;
+            if (briscola) {
+                var color = briscola.type;
+                var value = briscola.type_arg;
+                this.briscolaCard.addToStockWithId(this.getCardUniqueId(color, value), briscola.id);
+            }
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -287,8 +293,6 @@ function (dojo, declare) {
 
             dojo.subscribe( 'newScores', this, "notif_newScores" );
         },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
 
         notif_newHand : function(notif) {
             // We received a new full hand of 13 cards.
@@ -300,6 +304,9 @@ function (dojo, declare) {
                 var value = card.type_arg;
                 this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id);
             }
+
+            // Show deck on table
+            this.buildDeckOnTable(this.gamedatas);
         },
 
         notif_playCard : function(notif) {
@@ -325,8 +332,6 @@ function (dojo, declare) {
 
         notif_drawNewCard: function(notif) {
             var self = this;
-            console.log('WEEEEEEEEEEEEE');
-            console.log(notif.args);
 
             // Variabili riguardanti animazione della pescata
             var deck_index_to_pick = notif.args.deck_index_to_pick;
