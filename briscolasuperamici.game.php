@@ -35,7 +35,8 @@ class BriscolaSuperamici extends Table
         self::initGameStateLabels( array(
             "primoSemeGiocato" => 10,
             "semeBriscola" => 11,
-            "valoreBriscola" => 12
+            "valoreBriscola" => 12,
+            "idCartaBriscola" => 13
         ) );
 
         // Init $this->cards to be a deck
@@ -91,6 +92,7 @@ class BriscolaSuperamici extends Table
         self::setGameStateInitialValue( 'primoSemeGiocato', 0 );
         self::setGameStateInitialValue( 'semeBriscola', 0 );
         self::setGameStateInitialValue( 'valoreBriscola', 0 );
+        self::setGameStateInitialValue( 'idCartaBriscola', 0 );
 
         // Create cards
         $cards = array ();
@@ -144,10 +146,9 @@ class BriscolaSuperamici extends Table
         if (count($cards_in_deck) > 0) {
             $result['cardsindeck'] = count($cards_in_deck) - 1;
 
-            $semeBriscola = self::getGameStateValue( 'semeBriscola' );
-            $valoreBriscola = self::getGameStateValue( 'valoreBriscola' );
+            $idCartaBriscola = self::getGameStateValue( 'idCartaBriscola' );
             foreach ( $cards_in_deck as $card_id => $card ) {
-                if ($card['type'] == $semeBriscola && $card['type_arg'] == $valoreBriscola) {
+                if ($card_id == $idCartaBriscola) {
                     $result['briscola'] = $card;
                     break;
                 }
@@ -297,14 +298,14 @@ class BriscolaSuperamici extends Table
         // Choose briscola
         $rand_index = rand(0, $total_cards - 1);
         $briscola = $this->cards->getCardsInLocation('deck')[$rand_index];
-        $semeBriscola = $briscola['type'];
-        $valoreBriscola = $briscola['type_arg'];
+        $idBriscola = $briscola['id'];
 
-        self::setGameStateValue( 'semeBriscola', $semeBriscola );
-        self::setGameStateValue( 'valoreBriscola', $valoreBriscola );
+        self::setGameStateValue( 'semeBriscola', $briscola['type'] );
+        self::setGameStateValue( 'valoreBriscola', $briscola['type_arg'] );
+        self::setGameStateValue( 'idCartaBriscola', $idBriscola );
 
         // Set big negative location_arg to briscola, so that it's drawn at last for sure
-        $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_type='$semeBriscola' and card_type_arg='$valoreBriscola'";
+        $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_id='$idBriscola'";
         self::DbQuery($sql);
 
         // Deal 3 cards to each players and give some other info to the client
@@ -369,14 +370,16 @@ class BriscolaSuperamici extends Table
                     'deck_index_to_pick'=> $cards_in_deck_count - 1,
                     'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
                     'decks_to_delete' => $number_of_players,
-                    'remaining_cards_deck_label' => max($cards_in_deck_count - $number_of_players - 1, 0)));
+                    'remaining_cards_deck_label' => max($cards_in_deck_count - $number_of_players - 1, 0),
+                    'id_briscola' => self::getGameStateValue('idCartaBriscola')));
             } else {
                 self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
                     'card' => $card,
                     'deck_index_to_pick'=> 0,
                     'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
                     'decks_to_delete' => $number_of_players,
-                    'remaining_cards_deck_label' => 0));
+                    'remaining_cards_deck_label' => 0,
+                    'id_briscola' => self::getGameStateValue('idCartaBriscola')));
             }
 
         }

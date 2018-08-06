@@ -334,9 +334,11 @@ function (dojo, declare) {
             var color = card.type;
             var value = card.type_arg;
 
+            var id_briscola = notif.args.id_briscola;
+
             // If deck_index_to_pick is 0, the player needs to pick the briscola
             if (deck_index_to_pick == 0) {
-                var anim = this.slideToObject('briscola_wrap_item_1', 'myhand');
+                var anim = this.slideToObject('briscola_wrap_item_' + id_briscola, 'myhand');
             } else {
                 var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
             }
@@ -348,7 +350,7 @@ function (dojo, declare) {
                 for (var i = deck_index_to_start_delete_from; i > deck_index_to_start_delete_from - decks_to_delete; i--) {
                     if (i === 0) {
                         // Destroy the briscola and exit
-                        dojo.destroy('briscola_wrap_item_1');
+                        dojo.destroy('briscola_wrap_item_' + id_briscola);
                         break;
                     }
 
