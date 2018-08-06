@@ -41,13 +41,12 @@
 
         $template = self::getGameName() . "_" . self::getGameName();
 
-        // TODO: Add other directions when playing in 4
-        $directions = array( 'S', 'N' );
+        // Arrange players so that current player is always on south
+        $players_to_dir = $this->game->getPlayersToDirection();
 
         // this will inflate our player block with actual players data
         $this->page->begin_block($template, "player");
-        foreach ( $players as $player_id => $info ) {
-            $dir = array_shift($directions);
+        foreach ( $players_to_dir as $player_id => $dir ) {
             $this->page->insert_block("player", array ("PLAYER_ID" => $player_id,
                 "PLAYER_NAME" => $players [$player_id] ['player_name'],
                 "PLAYER_COLOR" => $players [$player_id] ['player_color'],

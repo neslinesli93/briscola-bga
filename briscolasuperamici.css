@@ -66,35 +66,46 @@
     font-weight: bold;
 }
 
+/*** My CSS for player table ***/
+
+/*.playertable {*/
+    /*display: block;*/
+    /*margin-left: auto;*/
+    /*margin-right: auto;*/
+    /*text-align: center;*/
+    /*width: 180px;*/
+    /*height: 130px;*/
+/*}*/
+
+/*** Hearts CSS for player table ***/
 .playertable {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
+    position: absolute;
     text-align: center;
     width: 180px;
     height: 130px;
 }
 
-/*.playertable_N {*/
-    /*left: 50%;*/
-    /*top: 0px;*/
-    /*margin-left: -90px; !* half of 180 *!*/
-/*}*/
-/*.playertable_S {*/
-    /*left: 50%;*/
-    /*bottom: 0px;*/
-    /*margin-left: -90px; !* half of 180 *!*/
-/*}*/
-/*.playertable_W {*/
-    /*left: 0px;*/
-    /*top: 50%;*/
-    /*margin-top: -55px; !* half of 130 *!*/
-/*}*/
-/*.playertable_E {*/
-    /*right: 0px;*/
-    /*top: 50%;*/
-    /*margin-top: -55px; !* half of 130 *!*/
-/*}*/
+.playertable_N {
+    left: 50%;
+    top: 0;
+    margin-left: -90px; /* half of 180 */
+}
+.playertable_S {
+    left: 50%;
+    bottom: 0;
+    margin-left: -90px; /* half of 180 */
+}
+.playertable_W {
+    left: 0;
+    top: 50%;
+    margin-top: -55px; /* half of 130 */
+}
+.playertable_E {
+    right: 0;
+    top: 50%;
+    margin-top: -55px; /* half of 130 */
+}
+
 
 /*** cards on table ***/
 

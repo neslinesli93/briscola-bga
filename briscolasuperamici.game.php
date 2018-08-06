@@ -190,6 +190,42 @@ class BriscolaSuperamici extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function getPlayersToDirection()
+    {
+        $result = array();
+
+        $players = self::loadPlayersBasicInfos();
+        $nextPlayer = self::createNextPlayerTable( array_keys( $players ) );
+
+        $current_player = self::getCurrentPlayerId();
+
+        if (count($players) == 2) {
+            $directions = array( 'S', 'N' );
+        } else if (count($players) == 4) {
+            $directions = array( 'S', 'W', 'N', 'E' );
+        }
+
+
+        if( ! isset( $nextPlayer[ $current_player ] ) )
+        {
+            // Spectator mode: take any player for south
+            $player_id = $nextPlayer[0];
+            $result[ $player_id ] = array_shift( $directions );
+        }
+        else
+        {
+            // Normal mode: current player is on south
+            $player_id = $current_player;
+            $result[ $player_id ] = array_shift( $directions );
+        }
+
+        while( count( $directions ) > 0 )
+        {
+            $player_id = $nextPlayer[ $player_id ];
+            $result[ $player_id ] = array_shift( $directions );
+        }
+        return $result;
+    }
 
 
 //////////////////////////////////////////////////////////////////////////////
