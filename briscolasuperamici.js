@@ -337,10 +337,15 @@ function (dojo, declare) {
             var id_briscola = notif.args.id_briscola;
 
             // If deck_index_to_pick is 0, the player needs to pick the briscola
+            var briscola_already_destroyed = false;
             if (deck_index_to_pick == 0) {
                 var anim = this.slideToObject('briscola_wrap_item_' + id_briscola, 'myhand');
             } else {
                 var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
+
+                // Remove briscola card from the table
+                self.briscolaCard.removeAll();
+                briscola_already_destroyed = true;
             }
 
             dojo.connect(anim, 'onEnd', function(node) {
@@ -349,8 +354,10 @@ function (dojo, declare) {
                 // Remove the cards from deck
                 for (var i = deck_index_to_start_delete_from; i > deck_index_to_start_delete_from - decks_to_delete; i--) {
                     if (i === 0) {
-                        // Destroy the briscola and exit
-                        dojo.destroy('briscola_wrap_item_' + id_briscola);
+                        if (!briscola_already_destroyed) {
+                            self.briscolaCard.removeAll();
+                        }
+
                         break;
                     }
 

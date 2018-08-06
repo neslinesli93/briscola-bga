@@ -30,7 +30,6 @@
     </div>
 
     <div id="briscola_wrap">
-        <div id="briscola"></div>
     </div>
 
 </div>
