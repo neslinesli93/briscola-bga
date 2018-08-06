@@ -25,9 +25,12 @@
 
     <div id="mydeck_wrap">
     </div>
+
     <div id="remainingcards_wrap">
     </div>
+
     <div id="briscola_wrap">
+        <div id="briscola"></div>
     </div>
 
 </div>

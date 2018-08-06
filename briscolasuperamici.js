@@ -43,9 +43,6 @@ function (dojo, declare) {
         
         setup: function( gamedatas )
         {
-            console.log('GAMEDATAS');
-            console.log(gamedatas);
-
             // Player hand
             this.playerHand = new ebg.stock(); // new stock object for hand
             this.playerHand.create( this, $('myhand'), this.cardwidth, this.cardheight );
@@ -54,12 +51,9 @@ function (dojo, declare) {
             this.playerHand.image_items_per_row = 10;
 
             // Create a custom deck just to hold briscola
-            var briscola = gamedatas.briscola;
-            if (briscola) {
-                this.briscolaCard = new ebg.stock(); // new stock object for hand
-                this.briscolaCard.create( this, $('briscola_wrap'), this.cardwidth, this.cardheight );
-                this.briscolaCard.image_items_per_row = 10;
-            }
+            this.briscolaCard = new ebg.stock(); // new stock object for hand
+            this.briscolaCard.create( this, $('briscola_wrap'), this.cardwidth, this.cardheight );
+            this.briscolaCard.image_items_per_row = 10;
 
             // Create cards types:
             for (var color = 1; color <= 4; color++) {
@@ -67,11 +61,9 @@ function (dojo, declare) {
                     // Build card type id
                     // N.B: Cards are not sorted when in player's hand! Order is just random
                     var card_type_id = this.getCardUniqueId(color, value);
-                    this.playerHand.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
 
-                    if (briscola) {
-                        this.briscolaCard.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
-                    }
+                    this.playerHand.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                    this.briscolaCard.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
                 }
             }
 
@@ -99,8 +91,6 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-
-            console.log( "Ending game setup" );
         },
        
 
@@ -206,8 +196,7 @@ function (dojo, declare) {
                 // Move card from player panel
                 this.placeOnObject('cardontable_' + player_id, 'overall_player_board_' + player_id);
             } else {
-                // You played a card. If it exists in your hand, move card from there and remove
-                // corresponding item
+                // You played a card. If it exists in your hand, move card from there and remove corresponding item
                 if ($('myhand_item_' + card_id)) {
                     this.placeOnObject('cardontable_' + player_id, 'myhand_item_' + card_id);
                     this.playerHand.removeFromStockById(card_id);
@@ -218,23 +207,23 @@ function (dojo, declare) {
             this.slideToObject('cardontable_' + player_id, 'playertablecard_' + player_id).play();
         },
 
-        buildDeckOnTable: function(gamedatas) {
+        buildDeckOnTable: function(data) {
             // Create as many deck cards as there are cards to be drawn
-            for (var k = 1; k <= gamedatas.cardsindeck; k++) {
+            for (var k = 1; k <= data.cardsindeck; k++) {
                 dojo.place(this.format_block('jstpl_mydeck', {
                     deckid: k
                 }), 'mydeck_wrap');
             }
 
             // Add deck's remaining cards label
-            if (gamedatas.cardsindeck) {
+            if (data.cardsindeck) {
                 dojo.place(this.format_block('jstpl_remaining_cards', {
-                    remainingcards: gamedatas.cardsindeck
+                    remainingcards: data.cardsindeck
                 }), 'remainingcards_wrap');
             }
 
             // Finally, add briscola if present
-            var briscola = gamedatas.briscola;
+            var briscola = data.briscola;
             if (briscola) {
                 var color = briscola.type;
                 var value = briscola.type_arg;
@@ -295,10 +284,11 @@ function (dojo, declare) {
         },  
 
         notif_newHand : function(notif) {
-            // We received a new full hand of 13 cards.
+            // We received a new full hand of 3 cards.
             this.playerHand.removeAll();
+            this.briscolaCard.removeAll();
 
-            for ( var i in notif.args.cards) {
+            for (var i in notif.args.cards) {
                 var card = notif.args.cards[i];
                 var color = card.type;
                 var value = card.type_arg;
@@ -306,7 +296,7 @@ function (dojo, declare) {
             }
 
             // Show deck on table
-            this.buildDeckOnTable(this.gamedatas);
+            this.buildDeckOnTable(notif.args);
         },
 
         notif_playCard : function(notif) {
@@ -333,20 +323,20 @@ function (dojo, declare) {
         notif_drawNewCard: function(notif) {
             var self = this;
 
-            // Variabili riguardanti animazione della pescata
+            // Variables about the card's draw animation
             var deck_index_to_pick = notif.args.deck_index_to_pick;
             var deck_index_to_start_delete_from = notif.args.deck_index_to_start_delete_from;
             var decks_to_delete = notif.args.decks_to_delete;
             var remaining_cards_deck_label = notif.args.remaining_cards_deck_label;
 
-            // Variabili riguardanti la carta pescata
+            // Variables about the drawn card itself
             var card = notif.args.card;
             var color = card.type;
             var value = card.type_arg;
 
-            // Se deck_index_to_pick e' 0, pescare la briscola!
+            // If deck_index_to_pick is 0, the player needs to pick the briscola
             if (deck_index_to_pick == 0) {
-                var anim = this.slideToObject('briscola_wrap', 'myhand');
+                var anim = this.slideToObject('briscola_wrap_item_1', 'myhand');
             } else {
                 var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
             }
@@ -354,18 +344,18 @@ function (dojo, declare) {
             dojo.connect(anim, 'onEnd', function(node) {
                 dojo.destroy(node);
 
-                // Togli carte dal deck
+                // Remove the cards from deck
                 for (var i = deck_index_to_start_delete_from; i > deck_index_to_start_delete_from - decks_to_delete; i--) {
-                    if (i == 0) {
+                    if (i === 0) {
                         // Destroy the briscola and exit
-                        dojo.destroy('briscola_wrap');
+                        dojo.destroy('briscola_wrap_item_1');
                         break;
                     }
 
                     dojo.destroy('mydeck_' + i);
                 }
 
-                // Aggiorna carte rimanenti
+                // Update remaining cards of the deck
                 dojo.destroy('remainingcards');
                 if (remaining_cards_deck_label > 0) {
                     dojo.place(self.format_block('jstpl_remaining_cards', {

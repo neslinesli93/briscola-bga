@@ -102,16 +102,8 @@ class BriscolaSuperamici extends Table
             }
         }
 
+        // Create cards deck
         $this->cards->createCards( $cards, 'deck');
-
-        // Shuffle deck
-        $this->cards->shuffle('deck');
-
-        // Deal 3 cards to each players
-        $players = self::loadPlayersBasicInfos();
-        foreach ( $players as $player_id => $player ) {
-            $this->cards->pickCards(3, 'deck', $player_id);
-        }
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -271,33 +263,6 @@ class BriscolaSuperamici extends Table
 
         $this->gamestate->nextState('playCard');
     }
-
-    /*
-    
-    Example:
-
-    function playCard( $card_id )
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
-        
-        $player_id = self::getActivePlayerId();
-        
-        // Add your game logic to play a card there 
-        ...
-        
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), array(
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ) );
-          
-    }
-    
-    */
-
     
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -327,24 +292,37 @@ class BriscolaSuperamici extends Table
         $this->cards->moveAllCardsInLocation(null, "deck");
         $this->cards->shuffle('deck');
 
+        $total_cards = $this->cards->countCardsInLocation('deck');
+
         // Choose briscola
-        $briscola = current($this->cards->getCardsInLocation('deck'));
+        $rand_index = rand(0, $total_cards - 1);
+        $briscola = $this->cards->getCardsInLocation('deck')[$rand_index];
         $semeBriscola = $briscola['type'];
         $valoreBriscola = $briscola['type_arg'];
 
         self::setGameStateValue( 'semeBriscola', $semeBriscola );
         self::setGameStateValue( 'valoreBriscola', $valoreBriscola );
 
+        // Set big negative location_arg to briscola, so that it's drawn at last for sure
         $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_type='$semeBriscola' and card_type_arg='$valoreBriscola'";
         self::DbQuery($sql);
 
-        // Deal 3 cards to each players
-        // Create deck, shuffle it and give 3 initial cards
+        // Deal 3 cards to each players and give some other info to the client
         $players = self::loadPlayersBasicInfos();
+
+        // Subtract: 3 cards per player and the briscola
+        $cardsindeck = $total_cards - (count($players) * 3) - 1;
+
         foreach ( $players as $player_id => $player ) {
             $cards = $this->cards->pickCards(3, 'deck', $player_id);
-            // Notify player about his cards
-            self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
+
+            // Notify player about his cards, as well as other infos that are useful
+            // when passing from one hand to another, without refreshing
+            // (thus, without calling getAllData function)
+            self::notifyPlayer($player_id, 'newHand', '', array (
+                'cards' => $cards,
+                'cardsindeck' => $cardsindeck,
+                'briscola' => $briscola ));
         }
 
         $this->gamestate->nextState("");
@@ -567,7 +545,13 @@ class BriscolaSuperamici extends Table
         // Points
         $newRow = array( array( 'str' => clienttranslate('Current game points'), 'args' => array() ) );
         foreach( $player_to_points as $player_id => $points ) {
-            $newRow[] = $points;
+            if ($points >= $this->minimum_winning_score) {
+                $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
+            } else if ($points == $this->draw_score) {
+                $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
+            } else {
+                $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
+            }
         }
         $table[] = $newRow;
 
@@ -582,7 +566,7 @@ class BriscolaSuperamici extends Table
             "id" => 'finalScoring',
             "title" => clienttranslate("Result of this hand"),
             "table" => $table,
-            "closing" => "Ok"
+            "closing" => "Close"
         ) );
 
         // End game
