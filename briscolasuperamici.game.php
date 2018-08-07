@@ -260,7 +260,7 @@ class BriscolaSuperamici extends Table
         (note: each method below must match an input method in briscolasuperamici.action.php)
     */
 
-    function playCard($card_id) {
+    function playCard($card_id, $is_zombie) {
         self::checkAction("playCard");
         $player_id = self::getActivePlayerId();
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
@@ -268,20 +268,25 @@ class BriscolaSuperamici extends Table
         $currentCard = $this->cards->getCard($card_id);
         $currentTrickColor = self::getGameStateValue( 'primoSemeGiocato' ) ;
         if( $currentTrickColor == 0 ) {
-            self::setGameStateValue( 'primoSemeGiocato', $currentCard['type'] );
+            self::setGameStateValue('primoSemeGiocato', $currentCard['type'] );
+        }
+
+        $message = clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}');
+        if ($is_zombie) {
+            $message = clienttranslate('${player_name} automatically plays ${value_displayed} ${color_displayed}');
         }
 
         // And notify
-        self::notifyAllPlayers('playCard', clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}'),
+        self::notifyAllPlayers('playCard', $message,
             array (
             'i18n' => array ('color_displayed','value_displayed' ),
             'card_id' => $card_id,
             'player_id' => $player_id,
             'player_name' => self::getActivePlayerName(),
-            'value' => $currentCard ['type_arg'],
-            'value_displayed' => $this->values_label [$currentCard ['type_arg']],
+            'value' => $currentCard['type_arg'],
+            'value_displayed' => $this->values_label[$currentCard['type_arg']],
             'color' => $currentCard ['type'],
-            'color_displayed' => $this->colors [$currentCard ['type']] ['name']
+            'color_displayed' => $this->colors[$currentCard['type']]['name']
             ));
 
         $this->gamestate->nextState('playCard');
@@ -629,26 +634,20 @@ class BriscolaSuperamici extends Table
 
     function zombieTurn( $state, $active_player )
     {
-    	$statename = $state['name'];
-    	
         if ($state['type'] === "activeplayer") {
-            switch ($statename) {
-                default:
-                    $this->gamestate->nextState( "zombiePass" );
-                	break;
+            if ($state['name'] == "playerTurn") {
+                $player_cards = $this->cards->getCardsInLocation("hand", $active_player);
+                // Play the first card
+                foreach($player_cards as $card_id => $card) {
+                    $this->game->playCard($card_id, true);
+                    break;
+                }
             }
 
             return;
         }
 
-        if ($state['type'] === "multipleactiveplayer") {
-            // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
-            
-            return;
-        }
-
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
+        throw new feException("Zombie mode not supported at this game state: " . $state['name']);
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:
