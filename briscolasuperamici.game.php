@@ -182,15 +182,23 @@ class BriscolaSuperamici extends Table
     {
         $current_cards_in_deck = $this->cards->countCardsInLocation('deck');
         $drawn_card_ratio = ($this->number_of_cards_in_full_deck - $current_cards_in_deck) / (float) $this->number_of_cards_in_full_deck;
-
         self::error("Drawn card ratio is " . $drawn_card_ratio . " FINE!");
 
-        $current_hand_number = self::getGameStateValue('numeroTurno');
-        $hand_advancement_ratio = $current_hand_number / (float) max($this->winning_hands_to_end_game, $current_hand_number);
+        $userScores = self::getCollectionFromDb("SELECT player_id, player_score FROM player", true );
+        $maxScore = 0;
+        foreach( $userScores as $player_id => $score ) {
+            if ($score > $maxScore) {
+                $maxScore = $score;
+            }
+        }
+        self::error("Max score is " . $maxScore . " FINE!");
 
-        self::error("Hand advancement ratio is " . $hand_advancement_ratio . " FINE!");
+        $base = 1 / (float) $this->winning_hands_to_end_game * ($maxScore) * 100;
+        $current = $drawn_card_ratio * 100 / (float) $this->winning_hands_to_end_game;
+        $progress = $base + $current;
 
-        $progress = max(0, min(ceil($drawn_card_ratio * $hand_advancement_ratio * 100), 100));
+        self::error("Base is: " . $base . " FINE!");
+        self::error("Current is: " . $current . " FINE!");
         self::error("Game progress: " . $progress . " FINE!");
 
         return $progress;
