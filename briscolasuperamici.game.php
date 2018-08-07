@@ -181,12 +181,12 @@ class BriscolaSuperamici extends Table
     function getGameProgression()
     {
         $current_cards_in_deck = $this->cards->countCardsInLocation('deck');
-        $drawn_card_ratio = $current_cards_in_deck / $this->number_of_cards_in_full_deck;
+        $drawn_card_ratio = ($this->number_of_cards_in_full_deck - $current_cards_in_deck) / (float) $this->number_of_cards_in_full_deck;
 
         self::error("Drawn card ratio is " . $drawn_card_ratio . " FINE!");
 
         $current_hand_number = self::getGameStateValue('numeroTurno');
-        $hand_advancement_ratio = $current_hand_number / max($this->winning_hands_to_end_game, $current_hand_number);
+        $hand_advancement_ratio = $current_hand_number / (float) max($this->winning_hands_to_end_game, $current_hand_number);
 
         self::error("Hand advancement ratio is " . $hand_advancement_ratio . " FINE!");
 
