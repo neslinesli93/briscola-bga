@@ -32,12 +32,13 @@ class BriscolaSuperamici extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
 
-        self::initGameStateLabels( array(
+        self::initGameStateLabels(array(
             "primoSemeGiocato" => 10,
             "semeBriscola" => 11,
             "valoreBriscola" => 12,
-            "idCartaBriscola" => 13
-        ) );
+            "idCartaBriscola" => 13,
+            "numeroTurno" => 14
+        ));
 
         // Init $this->cards to be a deck
         $this->cards = self::getNew( "module.common.deck" );
@@ -50,6 +51,7 @@ class BriscolaSuperamici extends Table
         $this->draw_score = 60;
         $this->minimum_winning_score = 61;
         $this->winning_hands_to_end_game = 3;
+        $this->number_of_cards_in_full_deck = 40;
 	}
 	
     protected function getGameName( )
@@ -93,6 +95,7 @@ class BriscolaSuperamici extends Table
         self::setGameStateInitialValue( 'semeBriscola', 0 );
         self::setGameStateInitialValue( 'valoreBriscola', 0 );
         self::setGameStateInitialValue( 'idCartaBriscola', 0 );
+        self::setGameStateInitialValue( 'numeroTurno', 0 );
 
         // Create cards
         $cards = array ();
@@ -177,9 +180,20 @@ class BriscolaSuperamici extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
+        $current_cards_in_deck = $this->cards->countCardsInLocation('deck');
+        $drawn_card_ratio = $current_cards_in_deck / $this->number_of_cards_in_full_deck;
 
-        return 0;
+        self::error("Drawn card ratio is " . $drawn_card_ratio . " FINE!");
+
+        $current_hand_number = self::getGameStateValue('numeroTurno');
+        $hand_advancement_ratio = $current_hand_number / max($this->winning_hands_to_end_game, $current_hand_number);
+
+        self::error("Hand advancement ratio is " . $hand_advancement_ratio . " FINE!");
+
+        $progress = max(0, min(ceil($drawn_card_ratio * $hand_advancement_ratio * 100), 100));
+        self::error("Game progress: " . $progress . " FINE!");
+
+        return $progress;
     }
 
 
@@ -289,6 +303,10 @@ class BriscolaSuperamici extends Table
     */
 
     function stNewHand() {
+        // Stats
+        self::incStat(1, "handNbr");
+        self::setGameStateValue('numeroTurno', self::getGameStateValue('numeroTurno') + 1);
+
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, "deck");
         $this->cards->shuffle('deck');
@@ -296,13 +314,14 @@ class BriscolaSuperamici extends Table
         $total_cards = $this->cards->countCardsInLocation('deck');
 
         // Choose briscola
-        $rand_index = rand(0, $total_cards - 1);
-        $briscola = $this->cards->getCardsInLocation('deck')[$rand_index];
+        // N.B: The briscola index goes from 1 to len(array) because cards are indexed using auto increment IDs
+        $briscola_index = rand(1, $total_cards);
+        $briscola = $this->cards->getCardsInLocation('deck')[$briscola_index];
         $idBriscola = $briscola['id'];
 
-        self::setGameStateValue( 'semeBriscola', $briscola['type'] );
-        self::setGameStateValue( 'valoreBriscola', $briscola['type_arg'] );
-        self::setGameStateValue( 'idCartaBriscola', $idBriscola );
+        self::setGameStateValue('semeBriscola', $briscola['type'] );
+        self::setGameStateValue('valoreBriscola', $briscola['type_arg'] );
+        self::setGameStateValue('idCartaBriscola', $idBriscola );
 
         // Set big negative location_arg to briscola, so that it's drawn at last for sure
         $sql = "UPDATE card SET card_location_arg=$this->briscola_location_arg WHERE card_id='$idBriscola'";
@@ -364,13 +383,15 @@ class BriscolaSuperamici extends Table
 
             $card = $this->cards->pickCard('deck', $player_id_give_card_to);
             $remaining_cards = $cards_in_deck_count - $i - 1;
+            $remaining_cards_deck_label = max($cards_in_deck_count - $number_of_players - 1, 0);
             if ($remaining_cards > 0) {
                 self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
                     'card' => $card,
                     'deck_index_to_pick'=> $cards_in_deck_count - 1,
                     'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
                     'decks_to_delete' => $number_of_players,
-                    'remaining_cards_deck_label' => max($cards_in_deck_count - $number_of_players - 1, 0),
+                    'remaining_cards_deck_label' => $remaining_cards_deck_label,
+                    'delete_briscola_from_deck' => $remaining_cards_deck_label == 0,
                     'id_briscola' => self::getGameStateValue('idCartaBriscola')));
             } else {
                 self::notifyPlayer($player_id_give_card_to, 'drawNewCard', '', array (
@@ -379,6 +400,7 @@ class BriscolaSuperamici extends Table
                     'deck_index_to_start_delete_from' => $cards_in_deck_count - 1,
                     'decks_to_delete' => $number_of_players,
                     'remaining_cards_deck_label' => 0,
+                    'delete_briscola_from_deck'=> false,
                     'id_briscola' => self::getGameStateValue('idCartaBriscola')));
             }
 

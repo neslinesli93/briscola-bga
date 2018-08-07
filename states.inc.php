@@ -77,6 +77,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNewTrick",
+        "updateGameProgression" => true,
         "transitions" => array( "" => 32 )
     ),
 

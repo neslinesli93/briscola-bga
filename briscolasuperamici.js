@@ -328,6 +328,7 @@ function (dojo, declare) {
             var deck_index_to_start_delete_from = notif.args.deck_index_to_start_delete_from;
             var decks_to_delete = notif.args.decks_to_delete;
             var remaining_cards_deck_label = notif.args.remaining_cards_deck_label;
+            var delete_briscola_from_deck = notif.args.delete_briscola_from_deck;
 
             // Variables about the drawn card itself
             var card = notif.args.card;
@@ -343,9 +344,11 @@ function (dojo, declare) {
             } else {
                 var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
 
-                // Remove briscola card from the table
-                self.briscolaCard.removeAll();
-                briscola_already_destroyed = true;
+                if (delete_briscola_from_deck) {
+                    // We are on last hand
+                    self.briscolaCard.removeAll();
+                    briscola_already_destroyed = true;
+                }
             }
 
             dojo.connect(anim, 'onEnd', function(node) {
