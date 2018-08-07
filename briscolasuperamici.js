@@ -41,7 +41,7 @@ function (dojo, declare) {
             "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
         */
         
-        setup: function( gamedatas )
+        setup: function(gamedatas)
         {
             // Player hand
             this.playerHand = new ebg.stock(); // new stock object for hand
@@ -60,15 +60,15 @@ function (dojo, declare) {
                 for (var value = 2; value <= 11; value++) {
                     // Build card type id
                     // N.B: Cards are not sorted when in player's hand! Order is just random
-                    var card_type_id = this.getCardUniqueId(color, value);
+                    var cardTypeId = this.getCardUniqueId(color, value);
 
-                    this.playerHand.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
-                    this.briscolaCard.addItemType(card_type_id, 0, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                    this.playerHand.addItemType(cardTypeId, 0, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
+                    this.briscolaCard.addItemType(cardTypeId, 0, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
                 }
             }
 
             // Cards in player's hand
-            for ( var i in this.gamedatas.hand) {
+            for (var i in this.gamedatas.hand) {
                 var card = this.gamedatas.hand[i];
                 var color = card.type;
                 var value = card.type_arg;
@@ -80,8 +80,8 @@ function (dojo, declare) {
                 var card = this.gamedatas.cardsontable[j];
                 var color = card.type;
                 var value = card.type_arg;
-                var player_id = card.location_arg;
-                this.playCardOnTable(player_id, color, value, card.id);
+                var playerId = card.location_arg;
+                this.playCardOnTable(playerId, color, value, card.id);
             }
 
             // Show deck on the table
@@ -100,12 +100,10 @@ function (dojo, declare) {
         // onEnteringState: this method is called each time we are entering into a new game state.
         //                  You can use this method to perform some user interface changes at this moment.
         //
-        onEnteringState: function( stateName, args )
-        {
-            console.log( 'Entering state: '+stateName );
+        onEnteringState: function(stateName, args) {
+            console.log('Entering state: ' + stateName);
             
-            switch( stateName )
-            {
+            switch(stateName) {
             
             /* Example:
             
@@ -117,7 +115,6 @@ function (dojo, declare) {
                 break;
            */
            
-           
             case 'dummmy':
                 break;
             }
@@ -126,12 +123,10 @@ function (dojo, declare) {
         // onLeavingState: this method is called each time we are leaving a game state.
         //                 You can use this method to perform some user interface changes at this moment.
         //
-        onLeavingState: function( stateName )
-        {
-            console.log( 'Leaving state: '+stateName );
+        onLeavingState: function(stateName) {
+            console.log('Leaving state: ' + stateName);
             
-            switch( stateName )
-            {
+            switch(stateName) {
             
             /* Example:
             
@@ -152,15 +147,15 @@ function (dojo, declare) {
         // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
         //                        action status bar (ie: the HTML links in the status bar).
         //        
-        onUpdateActionButtons: function( stateName, args )
-        {
-            console.log( 'onUpdateActionButtons: '+stateName );
+        onUpdateActionButtons: function(stateName, args) {
+            console.log( 'onUpdateActionButtons: ' + stateName);
                       
-            if( this.isCurrentPlayerActive() )
-            {            
+            if(this.isCurrentPlayerActive()) {
                 switch( stateName )
                 {
-/*               
+
+                 /*
+
                  Example:
  
                  case 'myGameState':
@@ -171,7 +166,9 @@ function (dojo, declare) {
                     this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
                     break;
-*/
+
+                 */
+
                 }
             }
         },        
@@ -183,28 +180,28 @@ function (dojo, declare) {
             return (color - 1) * 10 + (value - 2);
         },
 
-        playCardOnTable : function(player_id, color, value, card_id) {
+        playCardOnTable : function(playerId, color, value, cardId) {
             // player_id => direction
             dojo.place(this.format_block('jstpl_cardontable', {
                 x : this.cardwidth * (value - 2),
                 y : this.cardheight * (color - 1),
-                player_id : player_id
-            }), 'playertablecard_' + player_id);
+                player_id : playerId
+            }), 'playertablecard_' + playerId);
 
-            if (player_id != this.player_id) {
+            if (playerId != this.player_id) {
                 // Some opponent played a card
                 // Move card from player panel
-                this.placeOnObject('cardontable_' + player_id, 'overall_player_board_' + player_id);
+                this.placeOnObject('cardontable_' + playerId, 'overall_player_board_' + playerId);
             } else {
                 // You played a card. If it exists in your hand, move card from there and remove corresponding item
-                if ($('myhand_item_' + card_id)) {
-                    this.placeOnObject('cardontable_' + player_id, 'myhand_item_' + card_id);
-                    this.playerHand.removeFromStockById(card_id);
+                if ($('myhand_item_' + cardId)) {
+                    this.placeOnObject('cardontable_' + playerId, 'myhand_item_' + cardId);
+                    this.playerHand.removeFromStockById(cardId);
                 }
             }
 
             // In any case: move it to its final destination
-            this.slideToObject('cardontable_' + player_id, 'playertablecard_' + player_id).play();
+            this.slideToObject('cardontable_' + playerId, 'playertablecard_' + playerId).play();
         },
 
         buildDeckOnTable: function(data) {
@@ -241,9 +238,9 @@ function (dojo, declare) {
                 var action = 'playCard';
                 if (this.checkAction(action, true)) {
                     // Can play a card
-                    var card_id = items[0].id;
+                    var cardId = items[0].id;
                     this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
-                        id : card_id,
+                        id : cardId,
                         lock : true
                     }, this, function(result) {
                     }, function(is_error) {
@@ -310,12 +307,14 @@ function (dojo, declare) {
 
         notif_giveAllCardsToPlayer : function(notif) {
             // Move all cards on table to given table, then destroy them
-            var winner_id = notif.args.player_id;
-            for ( var player_id in this.gamedatas.players) {
-                var anim = this.slideToObject('cardontable_' + player_id, 'overall_player_board_' + winner_id);
+            var winnerId = notif.args.player_id;
+            for (var playerId in this.gamedatas.players) {
+                var anim = this.slideToObject('cardontable_' + playerId, 'overall_player_board_' + winnerId);
+
                 dojo.connect(anim, 'onEnd', function(node) {
                     dojo.destroy(node);
                 });
+
                 anim.play();
             }
         },
@@ -324,30 +323,30 @@ function (dojo, declare) {
             var self = this;
 
             // Variables about the card's draw animation
-            var deck_index_to_pick = notif.args.deck_index_to_pick;
-            var deck_index_to_start_delete_from = notif.args.deck_index_to_start_delete_from;
-            var decks_to_delete = notif.args.decks_to_delete;
-            var remaining_cards_deck_label = notif.args.remaining_cards_deck_label;
-            var delete_briscola_from_deck = notif.args.delete_briscola_from_deck;
+            var deckIndexToPick = notif.args.deck_index_to_pick;
+            var deckIndexToStartDeleteFrom = notif.args.deck_index_to_start_delete_from;
+            var decksToDelete = notif.args.decks_to_delete;
+            var remainingCardsDeckLabel = notif.args.remaining_cards_deck_label;
+            var deleteBriscolaFromDeck = notif.args.delete_briscola_from_deck;
 
             // Variables about the drawn card itself
             var card = notif.args.card;
             var color = card.type;
             var value = card.type_arg;
 
-            var id_briscola = notif.args.id_briscola;
+            var idBriscola = notif.args.id_briscola;
 
             // If deck_index_to_pick is 0, the player needs to pick the briscola
-            var briscola_already_destroyed = false;
-            if (deck_index_to_pick == 0) {
-                var anim = this.slideToObject('briscola_wrap_item_' + id_briscola, 'myhand');
+            var briscolaAlreadyDestroyed = false;
+            if (deckIndexToPick == 0) {
+                var anim = this.slideToObject('briscola_wrap_item_' + idBriscola, 'myhand');
             } else {
-                var anim = this.slideToObject('mydeck_' + deck_index_to_pick, 'myhand');
+                var anim = this.slideToObject('mydeck_' + deckIndexToPick, 'myhand');
 
-                if (delete_briscola_from_deck) {
+                if (deleteBriscolaFromDeck) {
                     // We are on last hand
                     self.briscolaCard.removeAll();
-                    briscola_already_destroyed = true;
+                    briscolaAlreadyDestroyed = true;
                 }
             }
 
@@ -355,9 +354,9 @@ function (dojo, declare) {
                 dojo.destroy(node);
 
                 // Remove the cards from deck
-                for (var i = deck_index_to_start_delete_from; i > deck_index_to_start_delete_from - decks_to_delete; i--) {
+                for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
                     if (i === 0) {
-                        if (!briscola_already_destroyed) {
+                        if (!briscolaAlreadyDestroyed) {
                             self.briscolaCard.removeAll();
                         }
 
@@ -369,21 +368,22 @@ function (dojo, declare) {
 
                 // Update remaining cards of the deck
                 dojo.destroy('remainingcards');
-                if (remaining_cards_deck_label > 0) {
+                if (remainingCardsDeckLabel > 0) {
                     dojo.place(self.format_block('jstpl_remaining_cards', {
-                        remainingcards: remaining_cards_deck_label
+                        remainingcards: remainingCardsDeckLabel
                     }), 'remainingcards_wrap');
                 }
 
                 self.playerHand.addToStockWithId(self.getCardUniqueId(color, value), card.id);
             });
+
             anim.play();
         },
 
         notif_newScores : function(notif) {
             // Update players' scores
-            for ( var player_id in notif.args.newScores) {
-                this.scoreCtrl[player_id].toValue(notif.args.newScores[player_id]);
+            for (var playerId in notif.args.newScores) {
+                this.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
             }
         },
    });             
