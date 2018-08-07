@@ -13,28 +13,28 @@
 $gameinfos = array( 
 
 // Name of the game in English (will serve as the basis for translation) 
-'game_name' => "My Great Game",
+'game_name' => "Briscola",
 
 // Game designer (or game designers, separated by commas)
-'designer' => 'John Doe',       
+'designer' => '',
 
 // Game artist (or game artists, separated by commas)
-'artist' => 'Jane Doe',         
+'artist' => '',
 
 // Year of FIRST publication of this game. Can be negative.
-'year' => 2000,                 
+'year' => 0,
 
 // Game publisher
-'publisher' => 'My Publishing Company',                     
+'publisher' => '',
 
 // Url of game publisher website
-'publisher_website' => 'http://www.mypublishingcompany.com/',   
+'publisher_website' => '',
 
 // Board Game Geek ID of the publisher
-'publisher_bgg_id' => 1234,
+'publisher_bgg_id' => 0,
 
 // Board game geek ID of the game
-'bgg_id' => 54321,
+'bgg_id' => 11733,
 
 
 // Players configuration that can be played (ex: 2 to 4 players)
@@ -49,7 +49,7 @@ $gameinfos = array(
 
 
 // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
-'estimated_duration' => 30,           
+'estimated_duration' => 20,
 
 // Time in second add to a player when "giveExtraTime" is called (speed profile = fast)
 'fast_additional_time' => 30,           
@@ -80,22 +80,22 @@ $gameinfos = array(
 
 
 // Complexity of the game, from 0 (extremely simple) to 5 (extremely complex)
-'complexity' => 3,    
+'complexity' => 1,
 
 // Luck of the game, from 0 (absolutely no luck in this game) to 5 (totally luck driven)
 'luck' => 3,    
 
 // Strategy of the game, from 0 (no strategy can be setup) to 5 (totally based on strategy)
-'strategy' => 3,    
+'strategy' => 2,
 
 // Diplomacy of the game, from 0 (no interaction in this game) to 5 (totally based on interaction and discussion between players)
-'diplomacy' => 3,    
+'diplomacy' => 1,
 
 // Colors attributed to players
 'player_colors' => array( "ff0000", "008000", "0000ff", "ffa500", "773300" ),
 
 // Favorite colors support : if set to "true", support attribution of favorite colors based on player's preferences (see reattributeColorsBasedOnPreferences PHP method)
-'favorite_colors_support' => true,
+'favorite_colors_support' => false,
 
 // Game interface width range (pixels)
 // Note: game interface = space on the left side, without the column on the right
@@ -121,7 +121,7 @@ $gameinfos = array(
 //  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
 //  IMPORTANT: this list should be ORDERED, with the most important tag first.
 //  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-'tags' => array( 2 ),
+'tags' => array( 2, 11, 23, 200 ),
 
 
 //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
