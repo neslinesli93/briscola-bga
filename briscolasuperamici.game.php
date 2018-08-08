@@ -263,6 +263,7 @@ class BriscolaSuperamici extends Table
 
     function playCard($cardId, $isZombie) {
         self::checkAction("playCard");
+
         $playerId = self::getActivePlayerId();
         $this->cards->moveCard($cardId, 'cardsontable', $playerId);
 

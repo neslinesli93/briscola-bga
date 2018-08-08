@@ -46,9 +46,10 @@ function (dojo, declare) {
             // Player hand
             this.playerHand = new ebg.stock(); // new stock object for hand
             this.playerHand.create( this, $('myhand'), this.cardwidth, this.cardheight );
-
             // 10 images per row
             this.playerHand.image_items_per_row = 10;
+            // Set up card handlers
+            dojo.connect(this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged');
 
             // Create a custom deck just to hold briscola
             this.briscolaCard = new ebg.stock(); // new stock object for hand
@@ -87,7 +88,9 @@ function (dojo, declare) {
             // Show deck on the table
             this.buildDeckOnTable(gamedatas);
 
-            dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
+            // Add tooltips
+            this.addTooltipToClass('playertablecard', _("Card played on the table"), '');
+            this.addTooltip('briscola_wrap', _("Briscola card"), '');
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -102,21 +105,10 @@ function (dojo, declare) {
         //
         onEnteringState: function(stateName, args) {
             console.log('Entering state: ' + stateName);
-            
+
             switch(stateName) {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-           
-            case 'dummmy':
-                break;
+                case 'dummmy':
+                    break;
             }
         },
 
@@ -127,20 +119,8 @@ function (dojo, declare) {
             console.log('Leaving state: ' + stateName);
             
             switch(stateName) {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-           
-           
-            case 'dummmy':
-                break;
+                case 'dummmy':
+                    break;
             }               
         }, 
 
