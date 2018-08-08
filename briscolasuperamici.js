@@ -316,17 +316,39 @@ function (dojo, declare) {
 
             var idBriscola = notif.args.id_briscola;
 
+            // Smooth animations and UX
+            var briscolaCardAlreadyRemoved = false;
+            var deckCardsAlreadyDestroyed = false;
+            var deckLabelAlreadyDestroyed = false;
+
             // If deck_index_to_pick is 0, the player needs to pick the briscola
-            var briscolaAlreadyDestroyed = false;
             if (deckIndexToPick == 0) {
+                // Remove the cards from deck
+                deckCardsAlreadyDestroyed = true;
+                for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
+                    if (i === 0) {
+                        break;
+                    }
+
+                    dojo.destroy('mydeck_' + i);
+                }
+
+                // Destroy deck count as well
+                deckLabelAlreadyDestroyed = true;
+                dojo.destroy('remainingcards');
+
                 var anim = this.slideToObject('briscola_wrap_item_' + idBriscola, 'myhand');
+
             } else {
                 var anim = this.slideToObject('mydeck_' + deckIndexToPick, 'myhand');
 
                 if (deleteBriscolaFromDeck) {
-                    // We are on last hand
+                    // We are on last hand, so remove briscola card and destroy deck label
                     self.briscolaCard.removeAll();
-                    briscolaAlreadyDestroyed = true;
+                    briscolaCardAlreadyRemoved = true;
+
+                    dojo.destroy('remainingcards');
+                    deckLabelAlreadyDestroyed = true;
                 }
             }
 
@@ -334,20 +356,26 @@ function (dojo, declare) {
                 dojo.destroy(node);
 
                 // Remove the cards from deck
-                for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
-                    if (i === 0) {
-                        if (!briscolaAlreadyDestroyed) {
-                            self.briscolaCard.removeAll();
+                if (!deckCardsAlreadyDestroyed) {
+                    for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
+                        if (i === 0) {
+                            if (!briscolaCardAlreadyRemoved) {
+                                self.briscolaCard.removeAll();
+                            }
+
+                            break;
                         }
 
-                        break;
+                        dojo.destroy('mydeck_' + i);
                     }
+                }
 
-                    dojo.destroy('mydeck_' + i);
+                // Check if deck label with cards count still needs to be destroyed
+                if (!deckLabelAlreadyDestroyed) {
+                    dojo.destroy('remainingcards');
                 }
 
                 // Update remaining cards of the deck
-                dojo.destroy('remainingcards');
                 if (remainingCardsDeckLabel > 0) {
                     dojo.place(self.format_block('jstpl_remaining_cards', {
                         remainingcards: remainingCardsDeckLabel

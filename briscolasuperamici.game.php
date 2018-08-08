@@ -477,7 +477,7 @@ class BriscolaSuperamici extends Table
             self::notifyAllPlayers( 'giveAllCardsToPlayer','', array(
                 'player_id' => $bestValuePlayerId
             ));
-            
+
             // TODO: If there are 4 players, and there are 0 cards in the deck,
             // we need to show each other' cards to companions.
 
