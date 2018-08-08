@@ -61,23 +61,22 @@ $stats_type = array(
     // Statistics existing for each player
     "player" => array(
 
-        "turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
+        "bigScore" => array("id"=> 10,
+                    "name" => totranslate("Realize a score of at least 100 points"),
                     "type" => "int" ),
-    
-/*
-        Examples:    
-        
-        
-        "player_teststat1" => array(   "id"=> 10,
-                                "name" => totranslate("player test stat 1"), 
-                                "type" => "int" ),
-                                
-        "player_teststat2" => array(   "id"=> 11,
-                                "name" => totranslate("player test stat 2"), 
-                                "type" => "float" )
 
-*/    
+        "perfectScore" => array("id"=> 11,
+            "name" => totranslate("Perfect hand: 120 points"),
+            "type" => "int" ),
+
+        "noBriscola" => array("id"=> 12,
+            "name" => totranslate("Collect no briscola card"),
+            "type" => "int" ),
+
+        "allBriscola" => array("id"=> 13,
+            "name" => totranslate("Collect all the briscola cards"),
+            "type" => "int" )
+
     )
 
 );
