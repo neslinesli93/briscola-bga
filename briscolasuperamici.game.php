@@ -477,8 +477,7 @@ class BriscolaSuperamici extends Table
             self::notifyAllPlayers( 'giveAllCardsToPlayer','', array(
                 'player_id' => $bestValuePlayerId
             ));
-
-
+            
             // TODO: If there are 4 players, and there are 0 cards in the deck,
             // we need to show each other' cards to companions.
 
@@ -667,7 +666,7 @@ class BriscolaSuperamici extends Table
                 $playerCards = $this->cards->getCardsInLocation("hand", $activePlayer);
                 // Play the first card
                 foreach($playerCards as $card_id => $card) {
-                    $this->game->playCard($card_id, true);
+                    self::playCard($card_id, true);
                     break;
                 }
             }

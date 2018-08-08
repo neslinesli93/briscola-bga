@@ -249,15 +249,15 @@ function (dojo, declare) {
         */
         setupNotifications: function()
         {
-            dojo.subscribe('newHand', this, "notif_newHand");
-            dojo.subscribe('playCard', this, "notif_playCard");
+            dojo.subscribe('newHand', this, 'notif_newHand');
+            dojo.subscribe('playCard', this, 'notif_playCard');
 
-            dojo.subscribe( 'trickWin', this, "notif_trickWin" );
-            this.notifqueue.setSynchronous( 'trickWin', 1000 );
-            dojo.subscribe( 'giveAllCardsToPlayer', this, "notif_giveAllCardsToPlayer" );
-            dojo.subscribe( 'drawNewCard', this, "notif_drawNewCard" );
+            dojo.subscribe('trickWin', this, 'notif_trickWin');
+            this.notifqueue.setSynchronous('trickWin', 1000);
+            dojo.subscribe('giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer');
+            dojo.subscribe('drawNewCard', this, 'notif_drawNewCard');
 
-            dojo.subscribe( 'newScores', this, "notif_newScores" );
+            dojo.subscribe('newScores', this, 'notif_newScores');
         },  
 
         notif_newHand : function(notif) {
