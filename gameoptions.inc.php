@@ -26,30 +26,65 @@
 
 $game_options = array(
 
-    /* Example of game variant:
-    
-    
-    // note: game variant ID should start at 100 (ie: 100, 101, 102, ...). The maximum is 199.
     100 => array(
-                'name' => totranslate('my game option'),    
-                'values' => array(
+        'name' => totranslate('Number of rounds'),
+        'values' => array(
+            1 => array('name' => totranslate('Short (1 round)')),
+            2 => array('name' => totranslate('Classic (3 rounds)')),
+            3 => array('name' => totranslate('Long (5 rounds)'))
+        ),
+        'default' => 2
+    ),
 
-                            // A simple value for this option:
-                            1 => array( 'name' => totranslate('option 1') )
-
-                            // A simple value for this option.
-                            // If this value is chosen, the value of "tmdisplay" is displayed in the game lobby
-                            2 => array( 'name' => totranslate('option 2'), 'tmdisplay' => totranslate('option 2') ),
-
-                            // Another value, with other options:
-                            //  beta=true => this option is in beta version right now.
-                            //  nobeginner=true  =>  this option is not recommended for beginners
-                            3 => array( 'name' => totranslate('option 3'),  'beta' => true, 'nobeginner' => true ),) )
-                        )
+    101 => array(
+        'name' => totranslate('Team'),
+        'values' => array(
+            1 => array('name' => totranslate('No team (2 players) / Random teams (4 players)')),
+            2 => array('name' => totranslate('By table order: 1st/3rd versus 2nd/4th (4 players only)')),
+            3 => array('name' => totranslate('By table order: 1st/2nd versus 3rd/4th (4 players only)')),
+            4 => array('name' => totranslate('By table order: 1st/4th versus 2nd/3rd (4 players only)')),
+        ),
+        'startcondition' => array(
+            1 => array(),
+            2 => array(
+                array(
+                    'type' => 'minplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                ),
+                array(
+                    'type' => 'maxplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                )
+            ),
+            3 => array(
+                array(
+                    'type' => 'minplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                ),
+                array(
+                    'type' => 'maxplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                )
+            ),
+            4 => array(
+                array(
+                    'type' => 'minplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                ),
+                array(
+                    'type' => 'maxplayers',
+                    'value' => 4,
+                    'message' => totranslate('The selected team setting is available for 4 players only.')
+                )
             )
-
-    */
-
+        ),
+        'default' => 1
+    )
 );
 
 

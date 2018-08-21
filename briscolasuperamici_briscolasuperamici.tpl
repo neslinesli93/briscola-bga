@@ -10,33 +10,34 @@
 -------
 -->
 
-
-<div id="playertables">
-
-    <!-- BEGIN player -->
-    <div class="playertable whiteblock playertable_{DIR}">
-        <div class="playertablename" style="color:#{PLAYER_COLOR}">
-            {PLAYER_NAME}
+<div id="wholetable">
+    <div id="othercards">
+        <div id="mydeck_wrap" class="whiteblock">
         </div>
-        <div class="playertablecard" id="playertablecard_{PLAYER_ID}">
+
+        <div id="remainingcards_wrap">
+        </div>
+
+        <div id="briscola_wrap">
         </div>
     </div>
-    <!-- END player -->
 
-    <div id="mydeck_wrap">
+    <div id="playertables">
+        <!-- BEGIN player -->
+        <div class="playertable whiteblock playertable_{DIR}">
+            <div class="playertablename" style="color:#{PLAYER_COLOR}">
+                {PLAYER_NAME}
+            </div>
+            <div class="playertablecard" id="playertablecard_{PLAYER_ID}">
+            </div>
+        </div>
+        <!-- END player -->
     </div>
 
-    <div id="remainingcards_wrap">
-    </div>
-
-    <div id="briscola_wrap">
-    </div>
-
-</div>
-
-<div id="myhand_wrap" class="whiteblock">
-    <h3>{MY_HAND}</h3>
-    <div id="myhand">
+    <div id="myhand_wrap" class="whiteblock">
+        <h3>{MY_HAND}</h3>
+        <div id="myhand">
+        </div>
     </div>
 </div>
 

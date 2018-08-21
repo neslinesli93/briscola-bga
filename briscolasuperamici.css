@@ -48,10 +48,22 @@
 
 /** Table layout **/
 
+#wholetable {
+    margin: 0 auto;
+    max-width: 800px;
+    border: 0 solid black;
+}
+
 #playertables {
     position: relative;
-    /*width: 710px;*/
-    height: 340px;
+    width: 550px;
+    height: 380px;
+    /*height: 409px;*/
+    background-image: url('img/green_mat.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: 20px;
+    /*float: right;*/
 }
 
 .playertablecard {
@@ -66,37 +78,33 @@
     font-weight: bold;
 }
 
-/*** Single player table ***/
 .playertable {
     position: absolute;
     text-align: center;
-    width: 180px;
+    width: 130px;
     height: 130px;
 }
 
 .playertable_N {
-    left: 50%;
+    left: 48.5%;
     top: 0;
-    margin-left: -90px; /* half of 180 */
+    margin-left: -65px; /* half of 130 */
 }
 .playertable_S {
-    left: 50%;
+    left: 48.5%;
     bottom: 0;
-    margin-left: -90px; /* half of 180 */
+    margin-left: -65px; /* half of 130 */
 }
 .playertable_W {
-    left: 0;
-    top: 50%;
-    margin-top: -55px; /* half of 130 */
+    left: 10px;
+    top: 48.5%;
+    margin-top: -65px; /* half of 130 */
 }
 .playertable_E {
-    right: 0;
-    top: 50%;
-    margin-top: -55px; /* half of 130 */
+    right: 10px;
+    top: 48.5%;
+    margin-top: -65px; /* half of 130 */
 }
-
-
-/*** Cards on table ***/
 
 .cardontable {
     position: absolute;
@@ -105,23 +113,36 @@
     background-image: url('img/cards.jpg');
 }
 
-/*** Deck ***/
+/*** Other cards on table ***/
+
+#othercards {
+    float: right;
+    width: 150px;
+    height: 190px;
+    position: relative;
+    top: 110px;
+    border: 0px solid red;
+}
+
+#mydeck_wrap {
+    height: 130px;
+    width: 130px;
+}
 
 .mydeck {
-    width: 72px;
-    height: 108px;
+    height: 72px;
+    width: 108px;
     position: absolute;
-    top: 130px;
-    left: 10%;
-    background-image: url('img/deck.jpg');
+    background-image: url('img/deck-rotated.jpg');
+    z-index: 2;
+    left: 22px;
 }
 
 #remainingcards_wrap {
-    width: 72px; /* same as .mydeck */
     position: absolute; /* same as .mydeck */
-    left: 10%; /* same as .mydeck */
-    top: calc(130px - 24px); /* same as .mydeck, minus something */
-    text-align: center;
+    top: 48px;
+    left: 64px;
+    z-index: 3;
     font-size: 24px;
 }
 
@@ -129,24 +150,29 @@
     margin-top: 0;
 }
 
-/*** Briscola ***/
-
 #briscola_wrap {
-    position: absolute;
-    top: 136px;
-    left: 20%;
+    position: absolute !important;
+    top: 50px;
+    left: 40px;
+}
+
+#briscola_wrap .stockitem {
+    z-index: 1;
 }
 
 /*** My hand ***/
 
 #myhand_wrap {
     width: 235px;
-    display: block;
-    margin: auto;
+    margin-left: 150px;
     text-align: center;
 }
 
 /*** Misc ***/
+
+.stockitem {
+    border: none !important;
+}
 
 .tableWindow table {
     width: 100% !important;
