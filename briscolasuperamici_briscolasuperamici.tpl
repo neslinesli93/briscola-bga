@@ -32,6 +32,9 @@
             </div>
         </div>
         <!-- END player -->
+
+        <div id="dealer_icon"></div>
+        <div id="orientation" class="counterclockwise-icon"></div>
     </div>
 
     <div id="myhand_wrap" class="whiteblock">

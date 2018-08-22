@@ -113,6 +113,33 @@
     background-image: url('img/cards.jpg');
 }
 
+#dealer_icon {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background-image: url('img/dealer-icon.png');
+}
+
+#orientation {
+    position: absolute;
+    text-align: center;
+    width: 32px;
+    height: 32px;
+    left:50%;
+    top:50%;
+    margin-left: -16px;
+    margin-top: -16px;
+}
+
+.counterclockwise-icon {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background-image: url('img/counterclockwise.png');
+}
+
 /*** Other cards on table ***/
 
 #othercards {
@@ -158,6 +185,7 @@
 
 #briscola_wrap .stockitem {
     z-index: 1;
+    cursor: auto !important;
 }
 
 /*** My hand ***/

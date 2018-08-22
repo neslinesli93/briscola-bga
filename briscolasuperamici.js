@@ -88,6 +88,10 @@ function (dojo, declare) {
             // Show deck on the table
             this.buildDeckOnTable(gamedatas);
 
+            // Add dealer
+            this.setDealer(gamedatas.dealer);
+            this.addTooltip('dealer_icon', _('Dealer for this hand'), '');
+
             // Add tooltips
             this.addTooltipToClass('playertablecard', _("Card played on the table"), '');
             this.addTooltip('briscola_wrap', _("Briscola card"), '');
@@ -208,6 +212,11 @@ function (dojo, declare) {
             }
         },
 
+        setDealer: function(playerId) {
+            // Slide into position (bottom right of this player play zone)
+            this.slideToObjectPos('dealer_icon', 'playertablecard_' + playerId, 78, 78, 1000).play();
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
 
@@ -249,6 +258,7 @@ function (dojo, declare) {
         */
         setupNotifications: function()
         {
+            dojo.subscribe('dealCards', this, "notif_dealCards");
             dojo.subscribe('newHand', this, 'notif_newHand');
             dojo.subscribe('playCard', this, 'notif_playCard');
 
@@ -258,7 +268,12 @@ function (dojo, declare) {
             dojo.subscribe('drawNewCard', this, 'notif_drawNewCard');
 
             dojo.subscribe('newScores', this, 'notif_newScores');
-        },  
+        },
+
+        notif_dealCards: function(notif) {
+            // Redundant, show the cards dealer
+            this.setDealer(notif.args.player_id);
+        },
 
         notif_newHand : function(notif) {
             // We received a new full hand of 3 cards.
@@ -282,7 +297,7 @@ function (dojo, declare) {
         },
 
         notif_trickWin : function(notif) {
-            // We do nothing here, just wait in order players can view the cards played before they're gone.
+            // Empty
         },
 
         notif_giveAllCardsToPlayer : function(notif) {

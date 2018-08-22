@@ -29,9 +29,9 @@ $game_options = array(
     100 => array(
         'name' => totranslate('Number of rounds'),
         'values' => array(
-            1 => array('name' => totranslate('Short (1 round)')),
-            2 => array('name' => totranslate('Classic (3 rounds)')),
-            3 => array('name' => totranslate('Long (5 rounds)'))
+            1 => array('name' => totranslate('Short (1 win)')),
+            2 => array('name' => totranslate('Classic (3 wins)')),
+            3 => array('name' => totranslate('Long (5 wins)'))
         ),
         'default' => 2
     ),

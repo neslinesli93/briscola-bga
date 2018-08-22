@@ -19,7 +19,17 @@
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
+// Local constants
+//  - Number of rounds
+//  - Team pairing options
+define("SHORT_GAME", 1); // Short (1 win)
+define("CLASSIC_GAME", 2); // Classic (3 wins)
+define("LONG_GAME", 3); // Long (5 wins)
 
+define("TEAM_RANDOM", 1); // At random
+define("TEAM_1_3", 2); // By table order (1rst/3rd versus 2nd/4th)
+define("TEAM_1_2", 3); // By table order (1rst/2nd versus 3rd/4th)
+define("TEAM_1_4", 4); // By table order (1rst/4th versus 2nd/3rd)
 class BriscolaSuperamici extends Table
 {
 	function __construct( )
@@ -37,7 +47,10 @@ class BriscolaSuperamici extends Table
             "briscolaColor" => 11,
             "briscolaValue" => 12,
             "briscolaCardId" => 13,
-            "handNumber" => 14
+            "handNumber" => 14,
+            "dealer" => 15,
+            "roundsNumber" => 100,
+            "playersTeams" => 101
         ));
 
         // Init $this->cards to be a deck
@@ -77,21 +90,74 @@ class BriscolaSuperamici extends Table
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
-        $gameinfos = self::getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
+        $default_colors = array(
+            "ff0000",
+            "0000ff",
+            "ff0000",
+            "0000ff"
+        );
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
-        $values = array();
-        foreach( $players as $player_id => $player )
-        {
-            $color = array_shift( $default_colors );
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+        $sql = "INSERT INTO player (player_id, player_no, player_color, player_canal, player_name, player_avatar) VALUES ";
+
+        // Create some kind of sorted arrays with positions (?) using the undocumented `player_table_order` column
+        $order_values = array();
+        foreach($players as $player_id => $player) {
+            $order_values[] = $player["player_table_order"];
         }
+
+        sort($order_values);
+        $position = array();
+        foreach($order_values as $key => $val) {
+            $position[$val] = $key + 1;
+        }
+
+        // Compute player table order based on teams
+        $counter = 0;
+        $random_dealer = mt_rand(1, count($players));
+        $values = array();
+        foreach($players as $player_id => $player)
+        {
+            $color = null;
+            $player_no = null;
+            $counter++;
+
+            $playersTeams = self::getGameStateValue('playersTeams');
+            if ($playersTeams == TEAM_RANDOM) {
+                // Random since the $players order is random
+                // N.B: 2-players match can only end up here!
+                $color = array_shift($default_colors);
+                $player_no = $counter;
+            } else if (isset($player["player_table_order"])) {
+                // By default TEAM_1_3
+                $table_order = $position[$player["player_table_order"]];
+
+                if ($playersTeams == TEAM_1_2) {
+                    // If TEAM_1_2 swap 2 and 3
+                    $table_order = ($table_order == 2 ? 3 : ($table_order == 3 ? 2 : $table_order));
+                } else if ($playersTeams == TEAM_1_4) {
+                    // If TEAM_1_4 swap 4 and 3
+                    $table_order = ($table_order == 3 ? 4 : ($table_order == 4 ? 3 : $table_order));
+                }
+
+                if (isset($default_colors[$table_order - 1])) {
+                    $color = $default_colors[$table_order - 1];
+
+                    // Adjust player_no for randomizing first player (dealer)
+                    if ($table_order >= $random_dealer) {
+                        $player_no = $table_order - $random_dealer + 1;
+                    } else {
+                        $player_no = 4 - ($random_dealer - $table_order) + 1;
+                    }
+                }
+            }
+
+            $values[] = "('" . $player_id . "','" . $player_no . "','$color','" . $player['player_canal'] . "','" . addslashes($player['player_name']) . "','" . addslashes($player['player_avatar']) . "')";
+        }
+
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
         self::reloadPlayersBasicInfos();
         
         /************ Start the game initialization *****/
@@ -102,6 +168,18 @@ class BriscolaSuperamici extends Table
         self::setGameStateInitialValue('briscolaValue', 0);
         self::setGameStateInitialValue('briscolaCardId', 0);
         self::setGameStateInitialValue('handNumber', 0);
+        self::setGameStateInitialValue('dealer', -1);
+
+        $roundsNumberOption = self::getGameStateValue('roundsNumber');
+        $roundsNumber = null;
+        if ($roundsNumberOption == SHORT_GAME) {
+            $roundsNumber = 1;
+        } else if ($roundsNumberOption == CLASSIC_GAME) {
+            $roundsNumber = 3;
+        } else if ($roundsNumberOption == LONG_GAME) {
+            $roundsNumber = 5;
+        }
+        self::setGameStateInitialValue('roundsNumber', $roundsNumber);
 
         // Init game statistics
         self::initStat("table", "handNbr", 0);
@@ -123,7 +201,7 @@ class BriscolaSuperamici extends Table
         // Create cards deck
         $this->cards->createCards( $cards, 'deck');
 
-        // Activate first player (which is in general a good idea :) )
+        // Activate next player
         $this->activeNextPlayer();
 
         /************ End of the game initialization *****/
@@ -148,15 +226,15 @@ class BriscolaSuperamici extends Table
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
-        $result['players'] = self::getCollectionFromDb( $sql );
+        $result['players'] = self::getCollectionFromDb($sql);
 
         // Gather all information about current game situation (visible by player $current_player_id).
 
         // Cards in player hand
-        $result['hand'] = $this->cards->getCardsInLocation( 'hand', $currentPlayerId );
+        $result['hand'] = $this->cards->getCardsInLocation('hand', $currentPlayerId);
 
         // Cards played on the table
-        $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
+        $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
 
         $cardsInDeck = $this->cards->getCardsInLocation('deck');
         if (count($cardsInDeck) > 0) {
@@ -174,6 +252,9 @@ class BriscolaSuperamici extends Table
             $result['cardsindeck'] = 0;
             $result['briscola'] = null;
         }
+
+        // Dealer info
+        $result['dealer'] = self::getGameStateValue('dealer');
 
         return $result;
     }
@@ -229,7 +310,8 @@ class BriscolaSuperamici extends Table
         if (count($players) == 2) {
             $directions = array('S', 'N');
         } else if (count($players) == 4) {
-            $directions = array('S', 'W', 'N', 'E');
+            // Counterclockwise
+            $directions = array('S', 'E', 'N', 'W');
         }
 
 
@@ -243,7 +325,7 @@ class BriscolaSuperamici extends Table
             $result[$player_id] = array_shift($directions);
         }
 
-        while(count( $directions ) > 0) {
+        while(count($directions) > 0) {
             $player_id = $nextPlayer[$player_id];
             $result[$player_id] = array_shift($directions);
         }
@@ -287,8 +369,8 @@ class BriscolaSuperamici extends Table
             'player_name' => self::getActivePlayerName(),
             'value' => $currentCard['type_arg'],
             'value_displayed' => $this->values_label[$currentCard['type_arg']],
-            'color' => $currentCard ['type'],
-            'color_displayed' => $this->colors[$currentCard['type']]['name']
+            'color' => $currentCard['type'],
+            'color_displayed' => $this->icons[$currentCard['type']]
             ));
 
         $this->gamestate->nextState('playCard');
@@ -318,9 +400,31 @@ class BriscolaSuperamici extends Table
     */
 
     function stNewHand() {
+        $players = self::loadPlayersBasicInfos();
+
         // Stats and game states variables
         self::incStat(1, "handNbr");
         self::setGameStateValue('handNumber', self::getGameStateValue('handNumber') + 1);
+
+        // Current player is the dealer
+        $oldDealer = self::getGameStateValue('dealer');
+        $currentDealer = null;
+        if ($oldDealer == -1) {
+            $currentDealer = self::getActivePlayerId();
+        } else {
+            $nextPlayer = self::createNextPlayerTable(array_keys($players));
+            $currentDealer = $nextPlayer[$oldDealer];
+            $this->gamestate->changeActivePlayer($nextPlayer[$currentDealer]);
+        }
+
+        self::setGameStateValue('dealer', $currentDealer);
+        self::notifyAllPlayers('dealCards', clienttranslate('${player_name} is the dealer of this hand') , array(
+            'player_id' => $currentDealer,
+            'player_name' => $players[$currentDealer]['player_name']
+        ));
+
+        // Next player is the first one to play
+        $this->activeNextPlayer();
 
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, "deck");
@@ -343,9 +447,7 @@ class BriscolaSuperamici extends Table
         self::DbQuery($sql);
 
         // Deal 3 cards to each players and give some other info to the client
-        $players = self::loadPlayersBasicInfos();
-
-        // Subtract: 3 cards per player and the briscola
+        // N.B: Subtract: 3 cards per player and the briscola
         $cardsindeck = $totalCards - (count($players) * 3) - 1;
 
         foreach ($players as $playerId => $player) {
@@ -425,9 +527,11 @@ class BriscolaSuperamici extends Table
     }
 
     function stNextPlayer() {
+        $players = self::loadPlayersBasicInfos();
+        $numberOfPlayers = count($players);
+
         // Active next player OR end the trick and go to the next trick OR end the hand
-        // TODO: Vedere quanti giocatori stanno giocando e selezionare il numero giusto
-        if ($this->cards->countCardInLocation('cardsontable') == 2) {
+        if ($this->cards->countCardInLocation('cardsontable') == $numberOfPlayers) {
             // This is the end of the trick
             $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
             $bestValue = 0;
@@ -468,7 +572,6 @@ class BriscolaSuperamici extends Table
             // Notify
             // Note: we use 2 notifications here in order we can pause the display during the first notification
             // before we move all cards to the winner (during the second)
-            $players = self::loadPlayersBasicInfos();
             self::notifyAllPlayers( 'trickWin', clienttranslate('${player_name} wins the trick'), array(
                 'player_id' => $bestValuePlayerId,
                 'player_name' => $players[$bestValuePlayerId]['player_name']
