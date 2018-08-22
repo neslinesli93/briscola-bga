@@ -87,6 +87,7 @@ function (dojo, declare) {
 
             // Show deck on the table
             this.buildDeckOnTable(gamedatas);
+            this.addTooltip('mydeck_wrap', _('Deck with cards to be drawn'), '');
 
             // Add dealer
             this.setDealer(gamedatas.dealer);
@@ -94,7 +95,7 @@ function (dojo, declare) {
 
             // Add tooltips
             this.addTooltipToClass('playertablecard', _("Card played on the table"), '');
-            this.addTooltip('briscola_wrap', _("Briscola card"), '');
+            this.addTooltip('briscola_wrap', _("Briscola card (to be drawn when the deck is empty)"), '');
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
