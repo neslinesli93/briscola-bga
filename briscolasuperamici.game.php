@@ -49,13 +49,14 @@ class BriscolaSuperamici extends Table
             "briscolaCardId" => 13,
             "handNumber" => 14,
             "dealer" => 15,
+            "firstPlayer" => 16,
             "roundsNumber" => 100,
             "playersTeams" => 101
         ));
 
         // Init $this->cards to be a deck
-        $this->cards = self::getNew( "module.common.deck" );
-        $this->cards->init( "card" );
+        $this->cards = self::getNew("module.common.deck");
+        $this->cards->init("card");
 
         // Assign a big negative value to briscola card, so that it's drawn as last card
         $this->briscolaLocationArg = -1000;
@@ -201,8 +202,10 @@ class BriscolaSuperamici extends Table
         // Create cards deck
         $this->cards->createCards( $cards, 'deck');
 
-        // Activate next player
+        // Activate next player and set first player global
         $this->activeNextPlayer();
+        $firstPlayer = self::getActivePlayerId();
+        self::setGameStateInitialValue('firstPlayer', $firstPlayer);
 
         /************ End of the game initialization *****/
     }
@@ -411,9 +414,12 @@ class BriscolaSuperamici extends Table
         $currentDealer = null;
         if ($oldDealer == -1) {
             $currentDealer = self::getActivePlayerId();
+            // Next player is the first one to play
+            $this->activeNextPlayer();
         } else {
             $nextPlayer = self::createNextPlayerTable(array_keys($players));
             $currentDealer = $nextPlayer[$oldDealer];
+            // Player after dealer is the one who plays
             $this->gamestate->changeActivePlayer($nextPlayer[$currentDealer]);
         }
 
@@ -422,9 +428,6 @@ class BriscolaSuperamici extends Table
             'player_id' => $currentDealer,
             'player_name' => $players[$currentDealer]['player_name']
         ));
-
-        // Next player is the first one to play
-        $this->activeNextPlayer();
 
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, "deck");
@@ -610,7 +613,7 @@ class BriscolaSuperamici extends Table
 
         $playersToPoints = array();
         $playersToBriscolaCards = array();
-        foreach ( $players as $playerId => $player ) {
+        foreach ($players as $playerId => $player) {
             $playersToPoints[$playerId] = 0;
             $playersToBriscolaCards[$playerId] = 0;
         }
@@ -651,82 +654,230 @@ class BriscolaSuperamici extends Table
             }
         }
 
-        // TODO: Add team logic when dealing with 4 players
-        
-        // Notify score to players
-        foreach ($playersToPoints as $playerId => $points) {
-            self::notifyAllPlayers("points", clienttranslate('${player_name} makes ${points} points'), array (
-                'player_id' => $playerId,
-                'player_name' => $players[$playerId]['player_name'],
-                'points' => $points));
+        // Add team logic when dealing with 4 players
+        if (count($players) == 4) {
+            $nextPlayer = self::createNextPlayerTable(array_keys($players));
+            $firstPlayerId = self::getGameStateValue('firstPlayer');
+            $secondPlayerId = $nextPlayer[$firstPlayerId];
+            $thirdPlayerId = $nextPlayer[$secondPlayerId];
+            $fourthPlayerId = $nextPlayer[$thirdPlayerId];
 
-            if ($points >= $this->bigScore) {
-                self::incStat(1, "bigScore", $playerId);
+            $playerToTeam = array();
+            $playerToTeam[$firstPlayerId] = 1;
+            $playerToTeam[$secondPlayerId] = 2;
+            $playerToTeam[$thirdPlayerId] = 1;
+            $playerToTeam[$fourthPlayerId] = 2;
+
+            $teamToPoints = array(
+                1 => 0,
+                2 => 0
+            );
+            foreach ($playersToPoints as $playerId => $points) {
+                $teamToPoints[$playerToTeam[$playerId]] += $points;
             }
 
-            if ($points == $this->perfectScore) {
-                self::incStat(1, "perfectScore", $playerId);
+            $teamToBriscolaCards = array(
+                1 => 0,
+                2 => 0
+            );
+            foreach ($playersToBriscolaCards as $playerId => $briscolaCards) {
+                $teamToBriscolaCards[$playerToTeam[$playerId]] += $briscolaCards;
+            }
+
+            $teamToPlayers = array(
+                1 => array(
+                    1 => $firstPlayerId,
+                    2 => $thirdPlayerId
+                ),
+                2 => array(
+                    1 => $secondPlayerId,
+                    2 => $fourthPlayerId
+                )
+            );
+        }
+
+        // Notify score to players
+        // N.B: All the parts of code regarding notifications/stats have been duplicated
+        // in order to take into account the differences between 2/4 players games
+        if (count($players) == 2) {
+            foreach ($playersToPoints as $playerId => $points) {
+                self::notifyAllPlayers("points", clienttranslate('${player_name} makes ${points} points'), array (
+                    'player_id' => $playerId,
+                    'player_name' => $players[$playerId]['player_name'],
+                    'points' => $points));
+
+                if ($points >= $this->bigScore) {
+                    self::incStat(1, "bigScore", $playerId);
+                }
+
+                if ($points == $this->perfectScore) {
+                    self::incStat(1, "perfectScore", $playerId);
+                }
+            }
+        } else if (count($players) == 4) {
+            foreach ($teamToPoints as $teamId => $points) {
+                $p1Id = $teamToPlayers[$teamId][1];
+                $p2Id = $teamToPlayers[$teamId][2];
+
+                self::notifyAllPlayers("points", clienttranslate('Team ${player_name_1} and ${player_name_2} make ${points} points'), array (
+                    'player_name_1' => $players[$p1Id]['player_name'],
+                    'player_name_2' => $players[$p2Id]['player_name'],
+                    'points' => $points));
+
+                if ($points >= $this->bigScore) {
+                    self::incStat(1, "bigScore", $p1Id);
+                    self::incStat(1, "bigScore", $p2Id);
+                }
+
+                if ($points == $this->perfectScore) {
+                    self::incStat(1, "perfectScore", $p1Id);
+                    self::incStat(1, "perfectScore", $p2Id);
+                }
             }
         }
 
         // Apply score to players and notify hand winner or draw
-        foreach ($playersToPoints as $playerId => $points) {
-            if ($points >= $this->minimumWinningScore) {
-                $sql = "UPDATE player SET player_score=player_score+1  WHERE player_id='$playerId'";
-                self::DbQuery($sql);
+        if (count($players) == 2) {
+            foreach ($playersToPoints as $playerId => $points) {
+                if ($points >= $this->minimumWinningScore) {
+                    $sql = "UPDATE player SET player_score=player_score+1 WHERE player_id='$playerId'";
+                    self::DbQuery($sql);
 
-                self::notifyAllPlayers("points", clienttranslate('${player_name} wins the hand'), array (
-                    'player_id' => $playerId,
-                    'player_name' => $players [$playerId] ['player_name']));
-            } else if ($points == $this->drawScore) {
-                self::notifyAllPlayers("points", clienttranslate('Draw!'));
+                    self::notifyAllPlayers("points", clienttranslate('${player_name} wins the hand'), array (
+                        'player_id' => $playerId,
+                        'player_name' => $players [$playerId] ['player_name']));
+                } else if ($points == $this->drawScore) {
+                    self::notifyAllPlayers("points", clienttranslate('Draw!'));
+                    break;
+                }
+            }
+        } else if (count($players) == 4) {
+            foreach ($teamToPoints as $teamId => $points) {
+                $p1Id = $teamToPlayers[$teamId][1];
+                $p2Id = $teamToPlayers[$teamId][2];
+
+                if ($points >= $this->minimumWinningScore) {
+                    $sql = "UPDATE player SET player_score=player_score+1 WHERE player_id='$p1Id'";
+                    self::DbQuery($sql);
+
+                    $sql = "UPDATE player SET player_score=player_score+1 WHERE player_id='$p2Id'";
+                    self::DbQuery($sql);
+
+                    self::notifyAllPlayers("points", clienttranslate('Team ${player_name_1} and ${player_name_2} wins the hand'), array (
+                        'player_name_1' => $players[$p1Id]['player_name'],
+                        'player_name_2' => $players[$p2Id]['player_name']));
+                } else if ($points == $this->drawScore) {
+                    self::notifyAllPlayers("points", clienttranslate('Draw!'));
+                    break;
+                }
             }
         }
 
+
         // Check briscola stats
-        foreach ($playersToBriscolaCards as $playerId => $briscolaNumber) {
-            if ($briscolaNumber == 0) {
-                self::incStat(1, "noBriscola", $playerId);
-            } else if ($briscolaNumber == $this->allBriscolaCards) {
-                self::incStat(1, "allBriscola", $playerId);
+        if (count($players) == 2) {
+            foreach ($playersToBriscolaCards as $playerId => $briscolaNumber) {
+                if ($briscolaNumber == 0) {
+                    self::incStat(1, "noBriscola", $playerId);
+                } else if ($briscolaNumber == $this->allBriscolaCards) {
+                    self::incStat(1, "allBriscola", $playerId);
+                }
+            }
+        } else if (count($players) == 4) {
+            foreach ($teamToBriscolaCards as $teamId => $briscolaNumber) {
+                $p1Id = $teamToPlayers[$teamId][1];
+                $p2Id = $teamToPlayers[$teamId][2];
+
+                if ($briscolaNumber == 0) {
+                    self::incStat(1, "noBriscola", $p1Id);
+                    self::incStat(1, "noBriscola", $p2Id);
+                } else if ($briscolaNumber == $this->allBriscolaCards) {
+                    self::incStat(1, "allBriscola", $p1Id);
+                    self::incStat(1, "allBriscola", $p2Id);
+                }
             }
         }
 
         $newScores = self::getCollectionFromDb("SELECT player_id, player_score FROM player", true);
-        self::notifyAllPlayers("newScores", '', array( 'newScores' => $newScores ));
+        self::notifyAllPlayers("newScores", '', array('newScores' => $newScores));
+
+        if (count($players) == 4) {
+            $teamToNewScores = array(
+                1 => 0,
+                2 => 0
+            );
+            foreach ($newScores as $playerId => $score) {
+                // We override these variables twice, but we don't care since the score
+                // is the same for each member of the team
+                $teamToNewScores[$playerToTeam[$playerId]]  = $score;
+            }
+        }
 
         // Display table window with results
-
         $table = array();
 
         // Header line
         $firstRow = array('');
-        foreach($players as $playerId => $player) {
-            $firstRow[] = array(
-                'str' => '${player_name}',
-                'args' => array( 'player_name' => $player['player_name'] ),
-                'type' => 'header'
-            );
+        if (count($players) == 2) {
+            foreach($players as $playerId => $player) {
+                $firstRow[] = array(
+                    'str' => '${player_name}',
+                    'args' => array('player_name' => $player['player_name']),
+                    'type' => 'header'
+                );
+            }
+        } else if (count($players) == 4) {
+            foreach($teamToPlayers as $teamId => $teamPlayers) {
+                $p1Id = $teamPlayers[1];
+                $p2Id = $teamPlayers[2];
+                $teamName = $players[$p1Id]['player_name'] . " and " . $players[$p2Id]['player_name'];
+
+                $firstRow[] = array(
+                    'str' => '${team_name}',
+                    'args' => array('team_name' => $teamName),
+                    'type' => 'header'
+                );
+            }
         }
+
         $table[] = $firstRow;
 
         // Points
         $newRow = array(array('str' => clienttranslate('Current game points'), 'args' => array()));
-        foreach($playersToPoints as $playerId => $points) {
-            if ($points >= $this->minimumWinningScore) {
-                $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
-            } else if ($points == $this->drawScore) {
-                $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
-            } else {
-                $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
+        if (count($players) == 2) {
+            foreach($playersToPoints as $playerId => $points) {
+                if ($points >= $this->minimumWinningScore) {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
+                } else if ($points == $this->drawScore) {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
+                } else {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
+                }
+            }
+        } else if (count($players) == 4) {
+            foreach($teamToPoints as $teamId => $points) {
+                if ($points >= $this->minimumWinningScore) {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
+                } else if ($points == $this->drawScore) {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
+                } else {
+                    $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
+                }
             }
         }
+
         $table[] = $newRow;
 
         // Final score
         $newRow = array(array('str' => clienttranslate('Overall score'), 'args' => array()));
-        foreach($newScores as $playerId => $score) {
-            $newRow[] = "<b>" . $score . "</b>";
+        if (count($players) == 2) {
+            foreach($newScores as $playerId => $score) {
+                $newRow[] = "<b>" . $score . "</b>";
+            }
+        } else if (count($players) == 4) {
+            foreach($teamToNewScores as $teamId => $score) {
+                $newRow[] = "<b>" . $score . "</b>";
+            }
         }
         $table[] = $newRow;
 
