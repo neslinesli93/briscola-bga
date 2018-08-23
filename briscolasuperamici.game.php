@@ -50,6 +50,7 @@ class BriscolaSuperamici extends Table
             "handNumber" => 14,
             "dealer" => 15,
             "firstPlayer" => 16,
+            "showCardsPhaseDone" => 17,
             "roundsNumber" => 100,
             "playersTeams" => 101
         ));
@@ -193,6 +194,7 @@ class BriscolaSuperamici extends Table
         $cards = array ();
         foreach ( $this->colors as $colorId => $color ) {
             // spade, heart, diamond, club
+            // TODO: Change back to 11
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $colorId,'type_arg' => $value,'nbr' => 1);
@@ -350,6 +352,19 @@ class BriscolaSuperamici extends Table
         self::checkAction("playCard");
 
         $playerId = self::getActivePlayerId();
+        // Check if card is in actual player's hand
+        $cardIsInHand = false;
+        $playerHand = $this->cards->getCardsInLocation('hand', $playerId);
+        foreach($playerHand as $playerCard) {
+            if ($playerCard['id'] == $cardId) {
+                $cardIsInHand = true;
+                break;
+            }
+        }
+        if (!$cardIsInHand) {
+            throw new feException("This card is not in your hand");
+        }
+
         $this->cards->moveCard($cardId, 'cardsontable', $playerId);
 
         $currentCard = $this->cards->getCard($cardId);
@@ -378,6 +393,18 @@ class BriscolaSuperamici extends Table
 
         $this->gamestate->nextState('playCard');
     }
+
+    function endShowCards() {
+        self::checkAction("endShowCards");
+
+        // Here we have to get CURRENT player (= player who send the request) and not
+        // active player, because we are in a multiple active player state and the "active player"
+        // corresponds to nothing.
+        $player_id = self::getCurrentPlayerId();
+
+        // Continue the game until the end
+        $this->gamestate->setPlayerNonMultiactive($player_id, "endShowCards");
+    }
     
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -389,8 +416,54 @@ class BriscolaSuperamici extends Table
         game state.
     */
 
-    function argGiveCards() {
-        return array ();
+    function argShowCards() {
+        // Send each team all their won tricks, as well as teammate current hand
+        $players = self::loadPlayersBasicInfos();
+
+        $nextPlayer = self::createNextPlayerTable(array_keys($players));
+        $firstPlayerId = self::getGameStateValue('firstPlayer');
+        $secondPlayerId = $nextPlayer[$firstPlayerId];
+        $thirdPlayerId = $nextPlayer[$secondPlayerId];
+        $fourthPlayerId = $nextPlayer[$thirdPlayerId];
+
+        // This is just to remember how teams are made up
+        $playerToTeam = array();
+        $playerToTeam[$firstPlayerId] = 1;
+        $playerToTeam[$secondPlayerId] = 2;
+        $playerToTeam[$thirdPlayerId] = 1;
+        $playerToTeam[$fourthPlayerId] = 2;
+
+        $firstTeamCardsWon = array_merge(
+            $this->cards->getCardsInLocation('cardswon', $firstPlayerId),
+            $this->cards->getCardsInLocation('cardswon', $thirdPlayerId)
+        );
+        $secondTeamCardsWon = array_merge(
+            $this->cards->getCardsInLocation('cardswon', $secondPlayerId),
+            $this->cards->getCardsInLocation('cardswon', $fourthPlayerId)
+        );
+
+        return array(
+            // Using "_private" keyword, all data inside this array will be made private
+            '_private' => array(
+                // Data will be sent only to specific player IDs
+                $firstPlayerId => array(
+                    'trickswon' => $firstTeamCardsWon,
+                    'teammate_hand' => array_merge($this->cards->getCardsInLocation('hand', $thirdPlayerId), array())
+                ),
+                $secondPlayerId => array(
+                    'trickswon' => $secondTeamCardsWon,
+                    'teammate_hand' => array_merge($this->cards->getCardsInLocation('hand', $fourthPlayerId), array())
+                ),
+                $thirdPlayerId => array(
+                    'trickswon' => $firstTeamCardsWon,
+                    'teammate_hand' => array_merge($this->cards->getCardsInLocation('hand', $firstPlayerId), array())
+                ),
+                $fourthPlayerId => array(
+                    'trickswon' => $secondTeamCardsWon,
+                    'teammate_hand' => array_merge($this->cards->getCardsInLocation('hand', $secondPlayerId), array())
+                )
+            )
+        );
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -408,6 +481,7 @@ class BriscolaSuperamici extends Table
         // Stats and game states variables
         self::incStat(1, "handNbr");
         self::setGameStateValue('handNumber', self::getGameStateValue('handNumber') + 1);
+        self::setGameStateValue('showCardsPhaseDone', 0);
 
         // Current player is the dealer
         $oldDealer = self::getGameStateValue('dealer');
@@ -469,16 +543,26 @@ class BriscolaSuperamici extends Table
     }
 
     function stNewTrick() {
-        // Active the player who wins the last trick
         // Reset trick color to 0 (= no color)
         self::setGameStateInitialValue('firstPlayedColor', 0);
-        $this->gamestate->nextState("");
+
+        // If there are 4 players, and there are 0 cards in the deck,
+        // we need to show each other' cards to companions as well as all taken cards during the game!
+        $players = self::loadPlayersBasicInfos();
+        $cardsInDeck = $this->cards->countCardInLocation('deck');
+        $showCardsPhaseDone = self::getGameStateValue('showCardsPhaseDone');
+        if ($cardsInDeck == 0 && count($players) == 4 && $showCardsPhaseDone == 0) {
+            self::setGameStateValue('showCardsPhaseDone', 1);
+            $this->gamestate->nextState("finalPhase");
+        } else {
+            $this->gamestate->nextState("nextPlayer");
+        }
     }
 
     function stDrawCards() {
-        // Pesca le carte dal mazzo e le da' a ciascun giocatore.
-        // Anziche' implementare un giro effettivo di pescate (come la briscola offline),
-        // facciamo pescare a tutti la prima carta nel deck, tranne quando l'ultimo deve pescare la briscola
+        // Draw cards from the deck and give them to each player.
+        // Instead of implementing a real turn, we make each player draw the first card
+        // on the deck, exception made for the briscola card.
         $players = self::loadPlayersBasicInfos();
         $numberOfPlayers = count($players);
         $lastWinnerId = self::getActivePlayerId();
@@ -487,7 +571,7 @@ class BriscolaSuperamici extends Table
         $lastWinnerPosition = $players[$lastWinnerId]['player_no'];
         for ($i = 0; $i < $numberOfPlayers; $i++) {
             $playerIdGiveCardTo = null;
-            foreach ( $players as $player_id => $player ) {
+            foreach ($players as $player_id => $player) {
                 $currentPlayerPosition = $players[$player_id]['player_no'];
 
                 $nextPlayerPosition = $lastWinnerPosition + $i;
@@ -501,6 +585,9 @@ class BriscolaSuperamici extends Table
                 }
             }
 
+            // This is a convoluted way to represent deck draws:
+            // we create as many DOM nodes representing the deck as there are cards in the actual deck,
+            // and proceed to delete 2/4 of them after every draw.
             $card = $this->cards->pickCard('deck', $playerIdGiveCardTo);
             $remainingCards = $cardsInDeckCount - $i - 1;
             $remainingCardsDeckLabel = max($cardsInDeckCount - $numberOfPlayers - 1, 0);
@@ -584,9 +671,7 @@ class BriscolaSuperamici extends Table
                 'player_id' => $bestValuePlayerId
             ));
 
-            // TODO: If there are 4 players, and there are 0 cards in the deck,
-            // we need to show each other' cards to companions.
-
+            // Decide what state is next
             if ($this->cards->countCardInLocation('hand') == 0) {
                 // End of the hand
                 $this->gamestate->nextState("endHand");
@@ -605,6 +690,11 @@ class BriscolaSuperamici extends Table
             self::giveExtraTime($playerId);
             $this->gamestate->nextState('nextPlayer');
         }
+    }
+
+    function stShowCards() {
+        // Active all players: everyone can have a peek at old cards/teammate cards
+        $this->gamestate->setAllPlayersMultiactive();
     }
 
     function stEndHand() {

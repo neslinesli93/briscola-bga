@@ -58,7 +58,7 @@ $machinestates = array(
         "description" => "",
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => array( "" => 20 )
+        "transitions" => array("" => 20)
     ),
 
     /// Nuova partita (si danno le tre carte + briscola)
@@ -68,7 +68,7 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNewHand",
         "updateGameProgression" => true,
-        "transitions" => array( "" => 30 )
+        "transitions" => array("" => 30)
     ),
 
     // Seme giocato
@@ -78,7 +78,7 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNewTrick",
         "updateGameProgression" => true,
-        "transitions" => array( "" => 32 )
+        "transitions" => array("nextPlayer" => 32, "finalPhase" => 34)
     ),
 
     31 => array(
@@ -86,7 +86,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stDrawCards",
-        "transitions" => array( "" => 30 )
+        "transitions" => array("" => 30)
     ),
 
     32 => array(
@@ -94,8 +94,8 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must play a card'),
         "descriptionmyturn" => clienttranslate('${you} must play a card'),
         "type" => "activeplayer",
-        "possibleactions" => array( "playCard" ),
-        "transitions" => array( "playCard" => 33 )
+        "possibleactions" => array("playCard"),
+        "transitions" => array("playCard" => 33)
     ),
 
     33 => array(
@@ -103,7 +103,18 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "nextPlayer" => 32, "nextCards" => 31, "nextTrick" => 30, "endHand" => 40 )
+        "transitions" => array("nextPlayer" => 32, "nextCards" => 31, "nextTrick" => 30, "endHand" => 40)
+    ),
+
+    34 => array(
+        "name" => "showCards",
+        "description" => clienttranslate('Wait for other players to check their cards'),
+        "descriptionmyturn" => clienttranslate('Optionally choose an action or go to next turn'),
+        "type" => "multipleactiveplayer",
+        "action" => "stShowCards",
+        "args" => "argShowCards",
+        "possibleactions" => array("endShowCards"),
+        "transitions" => array("endShowCards" => 33)
     ),
 
     // End of the hand (scoring, etc...)
@@ -112,7 +123,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stEndHand",
-        "transitions" => array( "nextHand" => 20, "endGame" => 99 )
+        "transitions" => array("nextHand" => 20, "endGame" => 99)
     ),
    
     // Final state.

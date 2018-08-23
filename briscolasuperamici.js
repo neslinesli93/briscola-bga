@@ -43,30 +43,20 @@ function (dojo, declare) {
         
         setup: function(gamedatas)
         {
+            var playersCount = 0;
+            for (var k in gamedatas.players) {
+                if (gamedatas.players.hasOwnProperty(k)) {
+                    playersCount++;
+                }
+            }
+
             // Player hand
-            this.playerHand = new ebg.stock(); // new stock object for hand
-            this.playerHand.create( this, $('myhand'), this.cardwidth, this.cardheight );
-            // 10 images per row
-            this.playerHand.image_items_per_row = 10;
+            this.playerHand = this.createDeck('myhand', false);
             // Set up card handlers
             dojo.connect(this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged');
 
             // Create a custom deck just to hold briscola
-            this.briscolaCard = new ebg.stock(); // new stock object for hand
-            this.briscolaCard.create( this, $('briscola_wrap'), this.cardwidth, this.cardheight );
-            this.briscolaCard.image_items_per_row = 10;
-
-            // Create cards types:
-            for (var color = 1; color <= 4; color++) {
-                for (var value = 2; value <= 11; value++) {
-                    // Build card type id
-                    // N.B: Cards are not sorted when in player's hand! Order is just random
-                    var cardTypeId = this.getCardUniqueId(color, value);
-
-                    this.playerHand.addItemType(cardTypeId, 0, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
-                    this.briscolaCard.addItemType(cardTypeId, 0, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
-                }
-            }
+            this.briscolaCard = this.createDeck('briscola_wrap', false);
 
             // Cards in player's hand
             for (var i in this.gamedatas.hand) {
@@ -97,6 +87,11 @@ function (dojo, declare) {
             this.addTooltipToClass('playertablecard', _("Card played on the table"), '');
             this.addTooltip('briscola_wrap', _("Briscola card (to be drawn when the deck is empty)"), '');
 
+            // Hide orientation icon if 2 players only
+            if (playersCount === 2) {
+                dojo.style('orientation', 'display', 'none');
+            }
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
         },
@@ -112,7 +107,9 @@ function (dojo, declare) {
             console.log('Entering state: ' + stateName);
 
             switch(stateName) {
-                case 'dummmy':
+                case 'showCards':
+                    console.log('I am now in showCards state');
+                    console.log(args);
                     break;
             }
         },
@@ -133,33 +130,49 @@ function (dojo, declare) {
         //                        action status bar (ie: the HTML links in the status bar).
         //        
         onUpdateActionButtons: function(stateName, args) {
-            console.log( 'onUpdateActionButtons: ' + stateName);
+            console.log('onUpdateActionButtons: ' + stateName);
                       
             if(this.isCurrentPlayerActive()) {
-                switch( stateName )
-                {
+                switch(stateName) {
+                    case 'showCards':
+                        this.teammateHand = args._private.teammate_hand;
+                        this.teamWonTricks = args._private.trickswon;
 
-                 /*
+                        this.addActionButton('showTeammateCards_button', _('Show teammate cards'), 'onClickShowTeammateCards');
+                        this.addActionButton('showTeamTricks_button', _('Show all tricks won by your team'), 'onClickShowTeamWonTricks');
+                        this.addActionButton('showGoToNextTurn_button', _('Go to next turn'), 'onClickGoToNextTurn');
 
-                 Example:
- 
-                 case 'myGameState':
-                    
-                    // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
-                    break;
-
-                 */
-
+                        break;
                 }
             }
         },        
 
         ///////////////////////////////////////////////////
         //// Utility methods
+
+        createDeck: function(domId, weighted) {
+            var deckObject = new ebg.stock();
+            deckObject.create(this, $(domId), this.cardwidth, this.cardheight);
+            deckObject.image_items_per_row = 10;
+
+            // Create cards types
+            for (var color = 1; color <= 4; color++) {
+                for (var value = 2; value <= 11; value++) {
+                    // Build card type id
+                    var cardTypeId = this.getCardUniqueId(color, value);
+
+                    if (weighted) {
+                        // Assign card id as weight, so that they appear sorted inside a deck
+                        deckObject.addItemType(cardTypeId, cardTypeId, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
+                    } else {
+                        // Cards are not sorted, order is random (used e.g. in player's hand)
+                        deckObject.addItemType(cardTypeId, 0, g_gamethemeurl + 'img/cards.jpg', cardTypeId);
+                    }
+                }
+            }
+
+            return deckObject;
+        },
 
         getCardUniqueId : function(color, value) {
             return (color - 1) * 10 + (value - 2);
@@ -226,7 +239,7 @@ function (dojo, declare) {
 
             if (items.length > 0) {
                 var action = 'playCard';
-                if (this.checkAction(action, true)) {
+                if (this.checkAction(action)) {
                     // Can play a card
                     var cardId = items[0].id;
                     this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
@@ -237,11 +250,66 @@ function (dojo, declare) {
                     });
 
                     this.playerHand.unselectAll();
-                } else if (this.checkAction('giveCards')) {
-                    // Can give cards => let the player select some cards
                 } else {
                     this.playerHand.unselectAll();
                 }
+            }
+        },
+
+        onClickShowTeammateCards: function() {
+            // Prepare dialog to show cards
+            var teammateCardsDialog = new dijit.Dialog({
+                title: _("Your teammate hand"),
+                onCancel: function() {
+                    dojo.destroy('teammate-hand');
+                }
+            });
+
+            var html = '<div id="teammate-hand"></div>';
+            teammateCardsDialog.attr("content", html);
+            teammateCardsDialog.show();
+
+            // Build temporary deck and add cards do it
+            var teammateCardsDeck = this.createDeck('teammate-hand', true);
+            for (var i in this.teammateHand) {
+                var card = this.teammateHand[i];
+                var color = card.type;
+                var value = card.type_arg;
+                teammateCardsDeck.addToStockWithId(this.getCardUniqueId(color, value), card.id);
+            }
+        },
+
+        onClickShowTeamWonTricks: function() {
+            // Prepare dialog to show cards
+            var teamTricksWonDialog = new dijit.Dialog({
+                title: _("Tricks won by your team"),
+                onCancel: function() {
+                    dojo.destroy('team-tricks-won');
+                }
+            });
+
+            var html = '<div id="team-tricks-won"></div>';
+            teamTricksWonDialog.attr("content", html);
+            teamTricksWonDialog.show();
+
+            // Build temporary deck and add cards do it
+            var teamTricksWonDeck = this.createDeck('team-tricks-won', true);
+            for (var i in this.teamWonTricks) {
+                var card = this.teamWonTricks[i];
+                var color = card.type;
+                var value = card.type_arg;
+                teamTricksWonDeck.addToStockWithId(this.getCardUniqueId(color, value), card.id);
+            }
+        },
+
+        onClickGoToNextTurn: function() {
+            var action = 'endShowCards';
+            if (this.checkAction(action)) {
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
             }
         },
         
