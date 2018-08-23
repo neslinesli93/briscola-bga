@@ -114,7 +114,7 @@ $machinestates = array(
         "action" => "stShowCards",
         "args" => "argShowCards",
         "possibleactions" => array("endShowCards"),
-        "transitions" => array("endShowCards" => 33)
+        "transitions" => array("endShowCards" => 32)
     ),
 
     // End of the hand (scoring, etc...)
