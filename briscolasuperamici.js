@@ -77,7 +77,6 @@ function (dojo, declare) {
 
             // Show deck on the table
             this.buildDeckOnTable(gamedatas);
-            this.addTooltip('mydeck_wrap', _('Deck with cards to be drawn'), '');
 
             // Add dealer
             this.setDealer(gamedatas.dealer);
@@ -203,12 +202,8 @@ function (dojo, declare) {
         },
 
         buildDeckOnTable: function(data) {
-            // Create as many deck cards as there are cards to be drawn
-            for (var k = 1; k <= data.cardsindeck; k++) {
-                dojo.place(this.format_block('jstpl_mydeck', {
-                    deckid: k
-                }), 'mydeck_wrap');
-            }
+            // Create single deck on table
+            dojo.place(this.format_block('jstpl_mydeck'), 'mydeck_wrap');
 
             // Add deck's remaining cards label
             if (data.cardsindeck) {
@@ -366,6 +361,7 @@ function (dojo, declare) {
 
             // Show deck on table
             this.buildDeckOnTable(notif.args);
+            this.addTooltip('mydeck_wrap', _('Deck with cards to be drawn'), '');
         },
 
         notif_playCard : function(notif) {
@@ -392,12 +388,12 @@ function (dojo, declare) {
         notif_drawNewCard: function(notif) {
             var self = this;
 
+            console.log('aaaaaaaaaaaaaaaaaa');
+            console.log(notif.args);
+
             // Variables about the card's draw animation
-            var deckIndexToPick = notif.args.deck_index_to_pick;
-            var deckIndexToStartDeleteFrom = notif.args.deck_index_to_start_delete_from;
-            var decksToDelete = notif.args.decks_to_delete;
-            var remainingCardsDeckLabel = notif.args.remaining_cards_deck_label;
-            var deleteBriscolaFromDeck = notif.args.delete_briscola_from_deck;
+            var cardIndexToPick = notif.args.card_index_to_pick;
+            var remainingCards = notif.args.remaining_cards;
 
             // Variables about the drawn card itself
             var card = notif.args.card;
@@ -406,70 +402,39 @@ function (dojo, declare) {
 
             var idBriscola = notif.args.id_briscola;
 
-            // Smooth animations and UX
-            var briscolaCardAlreadyRemoved = false;
-            var deckCardsAlreadyDestroyed = false;
-            var deckLabelAlreadyDestroyed = false;
-
-            // If deck_index_to_pick is 0, the player needs to pick the briscola
-            if (deckIndexToPick == 0) {
-                // Remove the cards from deck
-                deckCardsAlreadyDestroyed = true;
-                for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
-                    if (i === 0) {
-                        break;
-                    }
-
-                    dojo.destroy('mydeck_' + i);
-                }
-
-                // Destroy deck count as well
-                deckLabelAlreadyDestroyed = true;
+            if (cardIndexToPick == 0) {
+                // If deck_index_to_pick is 0, the player needs to pick the briscola,
+                // and everything deck related must be destroyed
+                dojo.destroy('mydeck');
                 dojo.destroy('remainingcards');
-
                 var anim = this.slideToObject('briscola_wrap_item_' + idBriscola, 'myhand');
-
             } else {
-                var anim = this.slideToObject('mydeck_' + deckIndexToPick, 'myhand');
+                // Otherwise, a new temp deck is created just for the sake of animation
+                var deckDomNode = $('mydeck');
+                var deckTemp = dojo.clone(deckDomNode);
+                dojo.attr(deckTemp, "id", "mydeck-temp");
+                dojo.place(deckTemp, 'mydeck');
 
-                if (deleteBriscolaFromDeck) {
-                    // We are on last hand, so remove briscola card and destroy deck label
-                    self.briscolaCard.removeAll();
-                    briscolaCardAlreadyRemoved = true;
-
-                    dojo.destroy('remainingcards');
-                    deckLabelAlreadyDestroyed = true;
-                }
+                var anim = this.slideToObject('mydeck-temp', 'myhand');
             }
 
             dojo.connect(anim, 'onEnd', function(node) {
                 dojo.destroy(node);
 
-                // Remove the cards from deck
-                if (!deckCardsAlreadyDestroyed) {
-                    for (var i = deckIndexToStartDeleteFrom; i > deckIndexToStartDeleteFrom - decksToDelete; i--) {
-                        if (i === 0) {
-                            if (!briscolaCardAlreadyRemoved) {
-                                self.briscolaCard.removeAll();
-                            }
-
-                            break;
-                        }
-
-                        dojo.destroy('mydeck_' + i);
-                    }
-                }
-
-                // Check if deck label with cards count still needs to be destroyed
-                if (!deckLabelAlreadyDestroyed) {
-                    dojo.destroy('remainingcards');
-                }
-
-                // Update remaining cards of the deck
-                if (remainingCardsDeckLabel > 0) {
+                dojo.destroy('remainingcards');
+                if (remainingCards > 0) {
+                    // Just update the label with deck count
                     dojo.place(self.format_block('jstpl_remaining_cards', {
-                        remainingcards: remainingCardsDeckLabel
+                        remainingcards: remainingCards
                     }), 'remainingcards_wrap');
+                } else {
+                    // Destroy deck and empty briscola deck
+                    dojo.destroy('mydeck');
+
+                    self.briscolaCard.removeAll();
+
+                    // Remove tooltips
+                    self.removeTooltip('mydeck_wrap');
                 }
 
                 self.playerHand.addToStockWithId(self.getCardUniqueId(color, value), card.id);

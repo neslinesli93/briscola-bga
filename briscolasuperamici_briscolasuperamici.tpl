@@ -49,7 +49,7 @@
 // Javascript HTML templates
 
 var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
-var jstpl_mydeck = '<div class="mydeck" id="mydeck_${deckid}"></div>';
+var jstpl_mydeck = '<div class="mydeck" id="mydeck"></div>';
 var jstpl_remaining_cards = '<div id="remainingcards"><h4>${remainingcards}</h4></div>';
 
 </script>  

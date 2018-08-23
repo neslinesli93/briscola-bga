@@ -194,7 +194,7 @@ class BriscolaSuperamici extends Table
         foreach ( $this->colors as $colorId => $color ) {
             // spade, heart, diamond, club
             // TODO: Change back to 11
-            for ($value = 2; $value <= 11; $value ++) {
+            for ($value = 2; $value <= 6; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $colorId,'type_arg' => $value,'nbr' => 1);
             }
@@ -590,25 +590,19 @@ class BriscolaSuperamici extends Table
             // we create as many DOM nodes representing the deck as there are cards in the actual deck,
             // and proceed to delete 2/4 of them after every draw.
             $card = $this->cards->pickCard('deck', $playerIdGiveCardTo);
-            $remainingCards = $cardsInDeckCount - $i - 1;
-            $remainingCardsDeckLabel = max($cardsInDeckCount - $numberOfPlayers - 1, 0);
-            if ($remainingCards > 0) {
+            $currentRemainingCards = $cardsInDeckCount - $i - 1;
+            $remainingCardsAfterTurn = max($cardsInDeckCount - $numberOfPlayers - 1, 0);
+            if ($currentRemainingCards > 0) {
                 self::notifyPlayer($playerIdGiveCardTo, 'drawNewCard', '', array (
                     'card' => $card,
-                    'deck_index_to_pick'=> $cardsInDeckCount - 1,
-                    'deck_index_to_start_delete_from' => $cardsInDeckCount - 1,
-                    'decks_to_delete' => $numberOfPlayers,
-                    'remaining_cards_deck_label' => $remainingCardsDeckLabel,
-                    'delete_briscola_from_deck' => $remainingCardsDeckLabel == 0,
+                    'card_index_to_pick'=> $cardsInDeckCount - 1,
+                    'remaining_cards' => $remainingCardsAfterTurn,
                     'id_briscola' => self::getGameStateValue('briscolaCardId')));
             } else {
                 self::notifyPlayer($playerIdGiveCardTo, 'drawNewCard', '', array (
                     'card' => $card,
-                    'deck_index_to_pick'=> 0,
-                    'deck_index_to_start_delete_from' => $cardsInDeckCount - 1,
-                    'decks_to_delete' => $numberOfPlayers,
-                    'remaining_cards_deck_label' => 0,
-                    'delete_briscola_from_deck'=> false,
+                    'card_index_to_pick'=> 0,
+                    'remaining_cards' => 0,
                     'id_briscola' => self::getGameStateValue('briscolaCardId')));
             }
 
