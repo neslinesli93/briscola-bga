@@ -520,7 +520,7 @@ class BriscolaSuperamici extends Table
         self::setGameStateValue('briscolaCardId', $briscolaId );
 
         // Set big negative location_arg to briscola, so that it's drawn at last for sure
-        $sql = "UPDATE card SET card_location_arg=BRISCOLA_LOCATION_ARG WHERE card_id='$briscolaId'";
+        $sql = "UPDATE card SET card_location_arg='BRISCOLA_LOCATION_ARG' WHERE card_id='$briscolaId'";
         self::DbQuery($sql);
 
         // Deal 3 cards to each players and give some other info to the client
