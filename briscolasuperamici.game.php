@@ -22,6 +22,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 // Local constants
 //  - Number of rounds
 //  - Team pairing options
+//  - Various constants
 define("SHORT_GAME", 1); // Short (1 win)
 define("CLASSIC_GAME", 2); // Classic (3 wins)
 define("LONG_GAME", 3); // Long (5 wins)
@@ -30,6 +31,17 @@ define("TEAM_RANDOM", 1); // At random
 define("TEAM_1_3", 2); // By table order (1rst/3rd versus 2nd/4th)
 define("TEAM_1_2", 3); // By table order (1rst/2nd versus 3rd/4th)
 define("TEAM_1_4", 4); // By table order (1rst/4th versus 2nd/3rd)
+
+// Assign a big negative value to briscola card, so that it's drawn as last card
+define("BRISCOLA_LOCATION_ARG", -1000);
+
+define("DRAW_SCORE", 60);
+define("MINIMUM_WINNING_SCORE", 61);
+define("NUMBER_OF_CARDS_IN_FULL_DECK", 40);
+define("BIG_SCORE", 100);
+define("PERFECT_SCORE", 120);
+define("ALL_BRISCOLA_CARDS", 10);
+
 class BriscolaSuperamici extends Table
 {
 	function __construct( )
@@ -51,6 +63,7 @@ class BriscolaSuperamici extends Table
             "dealer" => 15,
             "firstPlayer" => 16,
             "showCardsPhaseDone" => 17,
+            "winningHandsToEndGame" => 18,
             "roundsNumber" => 100,
             "playersTeams" => 101
         ));
@@ -58,20 +71,6 @@ class BriscolaSuperamici extends Table
         // Init $this->cards to be a deck
         $this->cards = self::getNew("module.common.deck");
         $this->cards->init("card");
-
-        // Assign a big negative value to briscola card, so that it's drawn as last card
-        $this->briscolaLocationArg = -1000;
-
-        // Various points related stuff
-        $this->drawScore = 60;
-        $this->minimumWinningScore = 61;
-        $this->winningHandsToEndGame = 3;
-        $this->numberOfCardsInFullDeck = 40;
-
-        // Stats related variables
-        $this->bigScore = 100;
-        $this->perfectScore = 120;
-        $this->allBriscolaCards = 10;
 	}
 	
     protected function getGameName( )
@@ -181,7 +180,7 @@ class BriscolaSuperamici extends Table
         } else if ($roundsNumberOption == LONG_GAME) {
             $roundsNumber = 5;
         }
-        self::setGameStateInitialValue('roundsNumber', $roundsNumber);
+        self::setGameStateInitialValue('winningHandsToEndGame', $roundsNumber);
 
         // Init game statistics
         self::initStat("table", "handNbr", 0);
@@ -276,8 +275,9 @@ class BriscolaSuperamici extends Table
     */
     function getGameProgression()
     {
+        $winningHandsToEndGame = self::getGameStateValue('winningHandsToEndGame');
         $currentCardsInDeck = $this->cards->countCardsInLocation('deck');
-        $drawnCardRatio = ($this->numberOfCardsInFullDeck - $currentCardsInDeck) / (float) $this->numberOfCardsInFullDeck;
+        $drawnCardRatio = (NUMBER_OF_CARDS_IN_FULL_DECK - $currentCardsInDeck) / (float) NUMBER_OF_CARDS_IN_FULL_DECK;
 
         $userScores = self::getCollectionFromDb("SELECT player_id, player_score FROM player", true );
         $maxScore = 0;
@@ -287,8 +287,8 @@ class BriscolaSuperamici extends Table
             }
         }
 
-        $base = 1 / (float) $this->winningHandsToEndGame * ($maxScore) * 100;
-        $current = $drawnCardRatio * 100 / (float) $this->winningHandsToEndGame;
+        $base = 1 / (float) $winningHandsToEndGame * ($maxScore) * 100;
+        $current = $drawnCardRatio * 100 / (float) $winningHandsToEndGame;
         $progress = $base + $current;
 
         return $progress;
@@ -520,7 +520,7 @@ class BriscolaSuperamici extends Table
         self::setGameStateValue('briscolaCardId', $briscolaId );
 
         // Set big negative location_arg to briscola, so that it's drawn at last for sure
-        $sql = "UPDATE card SET card_location_arg=$this->briscolaLocationArg WHERE card_id='$briscolaId'";
+        $sql = "UPDATE card SET card_location_arg=BRISCOLA_LOCATION_ARG WHERE card_id='$briscolaId'";
         self::DbQuery($sql);
 
         // Deal 3 cards to each players and give some other info to the client
@@ -796,11 +796,11 @@ class BriscolaSuperamici extends Table
                     'player_name' => $players[$playerId]['player_name'],
                     'points' => $points));
 
-                if ($points >= $this->bigScore) {
+                if ($points >= BIG_SCORE) {
                     self::incStat(1, "bigScore", $playerId);
                 }
 
-                if ($points == $this->perfectScore) {
+                if ($points == PERFECT_SCORE) {
                     self::incStat(1, "perfectScore", $playerId);
                 }
             }
@@ -814,12 +814,12 @@ class BriscolaSuperamici extends Table
                     'player_name_2' => $players[$p2Id]['player_name'],
                     'points' => $points));
 
-                if ($points >= $this->bigScore) {
+                if ($points >= BIG_SCORE) {
                     self::incStat(1, "bigScore", $p1Id);
                     self::incStat(1, "bigScore", $p2Id);
                 }
 
-                if ($points == $this->perfectScore) {
+                if ($points == PERFECT_SCORE) {
                     self::incStat(1, "perfectScore", $p1Id);
                     self::incStat(1, "perfectScore", $p2Id);
                 }
@@ -829,14 +829,14 @@ class BriscolaSuperamici extends Table
         // Apply score to players and notify hand winner or draw
         if (count($players) == 2) {
             foreach ($playersToPoints as $playerId => $points) {
-                if ($points >= $this->minimumWinningScore) {
+                if ($points >= MINIMUM_WINNING_SCORE) {
                     $sql = "UPDATE player SET player_score=player_score+1 WHERE player_id='$playerId'";
                     self::DbQuery($sql);
 
                     self::notifyAllPlayers("points", clienttranslate('${player_name} wins the hand'), array (
                         'player_id' => $playerId,
                         'player_name' => $players [$playerId] ['player_name']));
-                } else if ($points == $this->drawScore) {
+                } else if ($points == DRAW_SCORE) {
                     self::notifyAllPlayers("points", clienttranslate('Draw!'));
                     break;
                 }
@@ -846,7 +846,7 @@ class BriscolaSuperamici extends Table
                 $p1Id = $teamToPlayers[$teamId][1];
                 $p2Id = $teamToPlayers[$teamId][2];
 
-                if ($points >= $this->minimumWinningScore) {
+                if ($points >= MINIMUM_WINNING_SCORE) {
                     $sql = "UPDATE player SET player_score=player_score+1 WHERE player_id='$p1Id'";
                     self::DbQuery($sql);
 
@@ -856,7 +856,7 @@ class BriscolaSuperamici extends Table
                     self::notifyAllPlayers("points", clienttranslate('Team ${player_name_1} and ${player_name_2} wins the hand'), array (
                         'player_name_1' => $players[$p1Id]['player_name'],
                         'player_name_2' => $players[$p2Id]['player_name']));
-                } else if ($points == $this->drawScore) {
+                } else if ($points == DRAW_SCORE) {
                     self::notifyAllPlayers("points", clienttranslate('Draw!'));
                     break;
                 }
@@ -869,7 +869,7 @@ class BriscolaSuperamici extends Table
             foreach ($playersToBriscolaCards as $playerId => $briscolaNumber) {
                 if ($briscolaNumber == 0) {
                     self::incStat(1, "noBriscola", $playerId);
-                } else if ($briscolaNumber == $this->allBriscolaCards) {
+                } else if ($briscolaNumber == ALL_BRISCOLA_CARDS) {
                     self::incStat(1, "allBriscola", $playerId);
                 }
             }
@@ -881,7 +881,7 @@ class BriscolaSuperamici extends Table
                 if ($briscolaNumber == 0) {
                     self::incStat(1, "noBriscola", $p1Id);
                     self::incStat(1, "noBriscola", $p2Id);
-                } else if ($briscolaNumber == $this->allBriscolaCards) {
+                } else if ($briscolaNumber == ALL_BRISCOLA_CARDS) {
                     self::incStat(1, "allBriscola", $p1Id);
                     self::incStat(1, "allBriscola", $p2Id);
                 }
@@ -936,9 +936,9 @@ class BriscolaSuperamici extends Table
         $newRow = array(array('str' => clienttranslate('Current game points'), 'args' => array()));
         if (count($players) == 2) {
             foreach($playersToPoints as $playerId => $points) {
-                if ($points >= $this->minimumWinningScore) {
+                if ($points >= MINIMUM_WINNING_SCORE) {
                     $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
-                } else if ($points == $this->drawScore) {
+                } else if ($points == DRAW_SCORE) {
                     $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
                 } else {
                     $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
@@ -946,9 +946,9 @@ class BriscolaSuperamici extends Table
             }
         } else if (count($players) == 4) {
             foreach($teamToPoints as $teamId => $points) {
-                if ($points >= $this->minimumWinningScore) {
+                if ($points >= MINIMUM_WINNING_SCORE) {
                     $newRow[] = clienttranslate("" . $points . " (<b>Win</b>)");
-                } else if ($points == $this->drawScore) {
+                } else if ($points == DRAW_SCORE) {
                     $newRow[] = clienttranslate("" . $points . " (<b>Draw</b>)");
                 } else {
                     $newRow[] = clienttranslate("" . $points . " (<b>Lose</b>)");
@@ -979,8 +979,9 @@ class BriscolaSuperamici extends Table
         ));
 
         // End game
+        $winningHandsToEndGame = self::getGameStateValue('winningHandsToEndGame');
         foreach($newScores as $playerId => $score) {
-            if($score >= $this->winningHandsToEndGame) {
+            if($score >= $winningHandsToEndGame) {
                 // Trigger the end of the game !
                 $this->gamestate->nextState("endGame");
                 return;
