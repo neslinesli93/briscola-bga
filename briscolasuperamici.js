@@ -335,11 +335,14 @@ function (dojo, declare) {
             dojo.subscribe('playCard', this, 'notif_playCard');
 
             dojo.subscribe('trickWin', this, 'notif_trickWin');
-            this.notifqueue.setSynchronous('trickWin', 1000);
             dojo.subscribe('giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer');
             dojo.subscribe('drawNewCard', this, 'notif_drawNewCard');
 
             dojo.subscribe('newScores', this, 'notif_newScores');
+
+            this.notifqueue.setSynchronous('newScores', 4000);
+            this.notifqueue.setSynchronous('trickWin', 1200);
+            this.notifqueue.setSynchronous('giveAllCardsToPlayer', 1300);
         },
 
         notif_dealCards: function(notif) {

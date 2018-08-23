@@ -194,7 +194,7 @@ class BriscolaSuperamici extends Table
         foreach ( $this->colors as $colorId => $color ) {
             // spade, heart, diamond, club
             // TODO: Change back to 11
-            for ($value = 2; $value <= 6; $value ++) {
+            for ($value = 2; $value <= 11; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $colorId,'type_arg' => $value,'nbr' => 1);
             }
