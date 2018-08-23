@@ -229,7 +229,7 @@ class BriscolaSuperamici extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_tricks tricks FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
 
         // Gather all information about current game situation (visible by player $current_player_id).
@@ -529,6 +529,10 @@ class BriscolaSuperamici extends Table
         $cardsindeck = $totalCards - (count($players) * 3) - 1;
 
         foreach ($players as $playerId => $player) {
+            // Reset player_tricks
+            $sql = "UPDATE player SET player_tricks=0 WHERE player_id='$playerId' ";
+            self::DbQuery($sql);
+
             $cards = $this->cards->pickCards(3, 'deck', $playerId);
 
             // Notify player about his cards, as well as other infos that are useful
@@ -654,12 +658,18 @@ class BriscolaSuperamici extends Table
             // Move all cards to "cardswon" of the given player
             $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $bestValuePlayerId);
 
+            // Update tricks info
+            $sql = "UPDATE player SET player_tricks=player_tricks+1 WHERE player_id='$bestValuePlayerId'";
+            self::DbQuery($sql);
+            $tricks = self::getUniqueValueFromDb("SELECT player_tricks FROM player WHERE player_id='$bestValuePlayerId'");
+
             // Notify
             // Note: we use 2 notifications here in order we can pause the display during the first notification
             // before we move all cards to the winner (during the second)
             self::notifyAllPlayers( 'trickWin', clienttranslate('${player_name} wins the trick'), array(
                 'player_id' => $bestValuePlayerId,
-                'player_name' => $players[$bestValuePlayerId]['player_name']
+                'player_name' => $players[$bestValuePlayerId]['player_name'],
+                'tricks' => $tricks
             ));
 
             self::notifyAllPlayers( 'giveAllCardsToPlayer','', array(

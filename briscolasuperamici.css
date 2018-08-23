@@ -206,3 +206,11 @@
     width: 100% !important;
     text-align: left !important;
 }
+
+.tricks_icon {
+    display: inline-block;
+    width: 32px;
+    height: 22px;
+    background-image: url('img/tricks-icon.png');
+}
+

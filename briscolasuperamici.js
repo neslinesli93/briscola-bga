@@ -44,11 +44,24 @@ function (dojo, declare) {
         setup: function(gamedatas)
         {
             var playersCount = 0;
-            for (var k in gamedatas.players) {
-                if (gamedatas.players.hasOwnProperty(k)) {
+            for (var pId in gamedatas.players) {
+                if (gamedatas.players.hasOwnProperty(pId)) {
                     playersCount++;
+
+                    // Set up player boards
+                    var player = gamedatas.players[pId];
+
+                    // Set up players boards if needed
+                    var playerBoardDiv = $('player_board_' + pId);
+                    dojo.place(this.format_block('jstpl_player_board', player), playerBoardDiv );
+
+                    var div = $('trickscount_p' + pId);
+                    if (div) {
+                        div.innerHTML = player['tricks'];
+                    }
                 }
             }
+            this.addTooltipToClass("tricks_icon", _("Tricks won during this hand"), '');
 
             // Player hand
             this.playerHand = this.createDeck('myhand', false);
@@ -373,7 +386,10 @@ function (dojo, declare) {
         },
 
         notif_trickWin : function(notif) {
-            // Empty
+            var div = $('trickscount_p' + notif.args.player_id);
+            if (div) {
+                div.innerHTML = notif.args.tricks;
+            }
         },
 
         notif_giveAllCardsToPlayer : function(notif) {
