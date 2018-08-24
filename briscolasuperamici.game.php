@@ -42,6 +42,10 @@ define("BIG_SCORE", 100);
 define("PERFECT_SCORE", 120);
 define("ALL_BRISCOLA_CARDS", 10);
 
+// Deck type
+define("ITALIAN_DECK", 1);
+define("FRENCH_DECK", 2);
+
 class BriscolaSuperamici extends Table
 {
 	function __construct( )
@@ -65,7 +69,8 @@ class BriscolaSuperamici extends Table
             "showCardsPhaseDone" => 17,
             "winningHandsToEndGame" => 18,
             "roundsNumber" => 100,
-            "playersTeams" => 101
+            "playersTeams" => 101,
+            "deckType" => 102
         ));
 
         // Init $this->cards to be a deck
@@ -191,9 +196,17 @@ class BriscolaSuperamici extends Table
 
         // Create cards
         $cards = array ();
-        foreach ( $this->colors as $colorId => $color ) {
+
+        $colors = null;
+        $deckType = self::getGameStateValue('deckType');
+        if ($deckType == ITALIAN_DECK) {
+            $colors = $this->italianColors;
+        } else if ($deckType == FRENCH_DECK) {
+            $colors = $this->frenchColors;
+        }
+
+        foreach ($colors as $colorId => $color) {
             // spade, heart, diamond, club
-            // TODO: Change back to 11
             for ($value = 2; $value <= 11; $value ++) {
                 //  2, 4, 5 ... K, 3, A
                 $cards [] = array ('type' => $colorId,'type_arg' => $value,'nbr' => 1);
@@ -259,6 +272,14 @@ class BriscolaSuperamici extends Table
 
         // Dealer info
         $result['dealer'] = self::getGameStateValue('dealer');
+
+        // Deck type info
+        $deckType = self::getGameStateValue('deckType');
+        if ($deckType == ITALIAN_DECK) {
+            $result['deck_type'] = 'italian';
+        } else if ($deckType == FRENCH_DECK) {
+            $result['deck_type'] = 'french';
+        }
 
         return $result;
     }
@@ -378,6 +399,18 @@ class BriscolaSuperamici extends Table
             $message = clienttranslate('${player_name} automatically plays ${value_displayed} ${color_displayed}');
         }
 
+        // Visualize played cards using the appropriate deck
+        $deckType = self::getGameStateValue('deckType');
+        $cardValueDisplayed = null;
+        $cardColorDisplayed = null;
+        if ($deckType == ITALIAN_DECK) {
+            $cardValueDisplayed = $this->italianValueLabel[$currentCard['type_arg']];
+            $cardColorDisplayed = $this->italianColors[$currentCard['type']]['name'];
+        } else if ($deckType == FRENCH_DECK) {
+            $cardValueDisplayed = $this->values_label[$currentCard['type_arg']];
+            $cardColorDisplayed = $this->icons[$currentCard['type']];
+        }
+
         // And notify
         self::notifyAllPlayers('playCard', $message,
             array (
@@ -386,9 +419,9 @@ class BriscolaSuperamici extends Table
             'player_id' => $playerId,
             'player_name' => self::getActivePlayerName(),
             'value' => $currentCard['type_arg'],
-            'value_displayed' => $this->values_label[$currentCard['type_arg']],
+            'value_displayed' => $cardValueDisplayed,
             'color' => $currentCard['type'],
-            'color_displayed' => $this->icons[$currentCard['type']]
+            'color_displayed' => $cardColorDisplayed
             ));
 
         $this->gamestate->nextState('playCard');

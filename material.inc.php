@@ -19,25 +19,49 @@
  *
  */
 
-$this->colors = array(
-    1 => array( 'name' => clienttranslate('spade'),
-        'nametr' => self::_('spade') ),
-    2 => array( 'name' => clienttranslate('heart'),
-        'nametr' => self::_('heart') ),
-    3 => array( 'name' => clienttranslate('club'),
-        'nametr' => self::_('club') ),
-    4 => array( 'name' => clienttranslate('diamond'),
-        'nametr' => self::_('diamond') )
+$this->italianColors = array(
+    1 => array('name' => clienttranslate('coin'),
+        'nametr' => self::_('coin')),
+    2 => array('name' => clienttranslate('cup'),
+        'nametr' => self::_('cup')),
+    3 => array('name' => clienttranslate('club'),
+        'nametr' => self::_('club')),
+    4 => array('name' => clienttranslate('spade'),
+        'nametr' => self::_('spade'))
 );
 
-$this->icons = array(
+$this->frenchColors = array(
+    1 => array('name' => clienttranslate('spade'),
+        'nametr' => self::_('spade')),
+    2 => array('name' => clienttranslate('heart'),
+        'nametr' => self::_('heart')),
+    3 => array('name' => clienttranslate('club'),
+        'nametr' => self::_('club')),
+    4 => array('name' => clienttranslate('diamond'),
+        'nametr' => self::_('diamond'))
+);
+
+$this->frenchIcons = array(
     1 => '<span style="color: black;">'.json_decode('"' . '\u2660' . '"').'</span>' , //spade
     2 => '<span style="color: red;">'.json_decode('"' . '\u2665' . '"').'</span>' , //heart
     3 => '<span style="color: black;">'.json_decode('"' . '\u2663' . '"').'</span>' , //club
     4 => '<span style="color: red;">'.json_decode('"' . '\u2666' . '"').'</span>' , //diamond
 );
 
-$this->values_label = array(
+$this->italianValueLabel = array(
+    2 =>'2',
+    3 => '4',
+    4 => '5',
+    5 => '6',
+    6 => '7',
+    7 => clienttranslate('Knave'),
+    8 => clienttranslate('Knight'),
+    9 => clienttranslate('King'),
+    10 => '3',
+    11 => clienttranslate('A')
+);
+
+$this->frenchValueLabel = array(
     2 =>'2',
     3 => '4',
     4 => '5',

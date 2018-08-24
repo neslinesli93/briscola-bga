@@ -24,11 +24,11 @@
 
     <div id="playertables">
         <!-- BEGIN player -->
-        <div class="playertable whiteblock playertable_{DIR}">
+        <div class="playertable whiteblock playertable_{DIR} {DECK_TYPE}">
             <div class="playertablename" style="color:#{PLAYER_COLOR}">
                 {PLAYER_NAME}
             </div>
-            <div class="playertablecard" id="playertablecard_{PLAYER_ID}">
+            <div class="playertablecard {DECK_TYPE}" id="playertablecard_{PLAYER_ID}">
             </div>
         </div>
         <!-- END player -->
@@ -48,7 +48,7 @@
 
 // Javascript HTML templates
 
-var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
+var jstpl_cardontable = '<div class="cardontable ${deck_type}" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
 var jstpl_mydeck = '<div class="mydeck" id="mydeck"></div>';
 var jstpl_remaining_cards = '<div id="remainingcards"><h4>${remainingcards}</h4></div>';
 var jstpl_player_board = '<div class="cp_board"><div id="tricks_p${id}" class="tricks_icon"></div> &#x00D7 <span id="trickscount_p${id}">0</span></div>';

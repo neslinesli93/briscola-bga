@@ -31,11 +31,11 @@
     function getGameName() {
         return "briscolasuperamici";
     }    
-  	function build_page( $viewArgs )
+  	function build_page($viewArgs)
   	{		
   	    // Get players & players number
         $players = $this->game->loadPlayersBasicInfos();
-        $players_nbr = count( $players );
+        $playersNbr = count($players);
 
         /*********** Place your code below:  ************/
 
@@ -44,17 +44,28 @@
         // Arrange players so that current player is always on south
         $players_to_dir = $this->game->getPlayersToDirection();
 
-        // this will inflate our player block with actual players data
+        // Get deck type
+        $deckTypeForPlayerBlock = null;
+        $deckType = $this->game->getGameStateValue('deckType');
+        if ($deckType == ITALIAN_DECK) {
+            $deckTypeForPlayerBlock = 'italian';
+        } else if ($deckType == FRENCH_DECK) {
+            $deckTypeForPlayerBlock = 'french';
+        }
+
+        // This will inflate our player block with actual players data
         $this->page->begin_block($template, "player");
-        foreach ( $players_to_dir as $player_id => $dir ) {
+        foreach ($players_to_dir as $player_id => $dir) {
             $this->page->insert_block("player", array (
                 "PLAYER_ID" => $player_id,
-                "PLAYER_NAME" => $players [$player_id] ['player_name'],
-                "PLAYER_COLOR" => $players [$player_id] ['player_color'],
-                "DIR" => $dir
+                "PLAYER_NAME" => $players[$player_id]['player_name'],
+                "PLAYER_COLOR" => $players[$player_id]['player_color'],
+                "DIR" => $dir,
+                "DECK_TYPE" => $deckTypeForPlayerBlock
             ));
         }
-        // this will make our My Hand text translatable
+
+        // This will make our My Hand text translatable
         $this->tpl['MY_HAND'] = self::_("My hand");
 
         /*********** Do not change anything below this line  ************/

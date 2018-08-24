@@ -57,21 +57,28 @@
 #playertables {
     position: relative;
     width: 550px;
-    height: 380px;
+    height: 400px;
     /*height: 409px;*/
     background-image: url('img/green_mat.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     border-radius: 20px;
-    /*float: right;*/
 }
 
 .playertablecard {
     display: inline-block;
     position: relative;
     margin-top: 5px;
+}
+
+.playertablecard.italian {
+    height: 123px;
     width: 72px;
+}
+
+.playertablecard.french {
     height: 96px;
+    width: 72px;
 }
 
 .playertablename {
@@ -82,6 +89,13 @@
     position: absolute;
     text-align: center;
     width: 130px;
+}
+
+.playertable.italian {
+    height: 144px;
+}
+
+.playertable.french {
     height: 130px;
 }
 
@@ -108,9 +122,22 @@
 
 .cardontable {
     position: absolute;
+}
+
+.cardontable.italian {
+    height: 123px;
     width: 72px;
+    background-image: url('img/italian-cards.jpg');
+    border-left: 2px solid black;
+    border-right: 3px solid black;
+    border-top: 2px solid black;
+    border-bottom: 1px solid black;
+}
+
+.cardontable.french {
     height: 96px;
-    background-image: url('img/cards.jpg');
+    width: 72px;
+    background-image: url('img/french-cards.jpg');
 }
 
 #dealer_icon {
@@ -140,6 +167,13 @@
     background-image: url('img/counterclockwise.png');
 }
 
+.bordered-card {
+    border-left: 2px solid black !important;
+    border-right: 3px solid black !important;
+    border-top: 2px solid black !important;
+    border-bottom: 1px solid black !important;
+}
+
 /*** Other cards on table ***/
 
 #othercards {
@@ -147,13 +181,16 @@
     width: 150px;
     height: 190px;
     position: relative;
-    top: 110px;
-    border: 0px solid red;
+    top: 120px;
 }
 
 #mydeck_wrap {
     height: 130px;
     width: 130px;
+}
+
+#mydeck_wrap.italian {
+    height: 147px;
 }
 
 .mydeck {
@@ -183,6 +220,10 @@
     left: 40px;
 }
 
+#briscola_wrap.italian {
+    top: 40px;
+}
+
 #briscola_wrap .stockitem {
     z-index: 1;
     cursor: auto !important;
@@ -197,10 +238,6 @@
 }
 
 /*** Misc ***/
-
-.stockitem {
-    border: none !important;
-}
 
 .tableWindow table {
     width: 100% !important;
