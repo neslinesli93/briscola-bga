@@ -1,52 +1,49 @@
 from PIL import Image
 
 # width: 72px;
-# height: 96px;
+# height: 123px;
 
 X = 72
-Y = 96
+Y = 123
 ROWS = 4
-COLS = 13
+COLS = 10
 NEW_COLS = 10
 
-src = Image.open("cards.jpg")
+src = Image.open("italian-cards.jpg")
 dst = Image.new('RGB', (X * NEW_COLS, Y * ROWS), (255, 255, 255))
 
-# Remove 3, 8, 9, 10
-for x in range(0, X * COLS - X, X):
-	for y in range(0, Y * ROWS, Y):
-		if x < X:
-			# Copy until 3
-			src_box = dst_box = (x, y, x + X, y + Y)
-		elif x == X:
-			# Skip 3
+# Remove A, 3
+for x in range(0, X * COLS + 1, X):
+	for y in range(0, Y * ROWS + 1, Y):
+		if x == 0:
+			# Skip A
 			continue
-		elif x < X * 6:
-			# Copy until 7 (included) shifted by 1
+		if x == X:
+			# Copy 2 shifted by 1
 			src_box = (x, y, x + X, y + Y)
 			dst_box = (x - 1 * X, y, x + X - 1 * X, y + Y)
-		elif x == X * 6 or x == X * 7 or x == X * 8:
-			# Skip 8, 9, 10
+		elif x == 2 * X:
+			# Skip 3
 			continue
 		else:
-			# Copy J, Q, K shifted by 4
+			# Copy everything else shifted by 2
 			src_box = (x, y, x + X, y + Y)
-			dst_box = (x - 4 * X, y, x + X - 4 * X, y + Y)
+			dst_box = (x - 2 * X, y, x + X - 2 * X, y + Y)
 
 		region = src.crop(src_box)
 		dst.paste(region, dst_box)
 
 # Add 3 and A
 for y in range(0, Y * ROWS, Y):
-	src_box = (X, y, 2 * X, y + Y)
+	src_box = (2 * X, y, 3 * X, y + Y)
 	dst_box = (X * NEW_COLS - 2 * X, y, X * NEW_COLS - 1 * X, y + Y)
 	region = src.crop(src_box)
 	dst.paste(region, dst_box)
 
 for y in range(0, Y * ROWS, Y):
-	src_box = (X * COLS - 1 * X, y, X * COLS, y + Y)
+	src_box = (0, y, X, y + Y)
 	dst_box = (X * NEW_COLS - 1 * X, y, X * NEW_COLS, y + Y)
 	region = src.crop(src_box)
 	dst.paste(region, dst_box)
 
-dst.save("output.jpg")
+dst.save("italian-output.jpg")
