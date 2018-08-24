@@ -1057,6 +1057,14 @@ class BriscolaSuperamici extends Table
             return;
         }
 
+        if ($state['type'] === "multipleactiveplayer") {
+            if ($state['name'] == "showCards") {
+                self::endShowCards();
+            }
+
+            return;
+        }
+
         throw new feException("Zombie mode not supported at this game state: " . $state['name']);
     }
     
