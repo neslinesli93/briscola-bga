@@ -114,6 +114,7 @@ function (dojo, declare) {
 
             // Show deck on the table
             this.buildDeckOnTable(gamedatas);
+            this.addTooltip('mydeck', _('Deck with cards to be drawn'), '');
 
             // Add dealer
             this.setDealer(gamedatas.dealer);
@@ -253,6 +254,13 @@ function (dojo, declare) {
                 dojo.place(this.format_block('jstpl_remaining_cards', {
                     remainingcards: data.cardsindeck
                 }), 'remainingcards_wrap');
+
+                // Cosmetic
+                if (data.cardsindeck < 10) {
+                    dojo.addClass('remainingcards_wrap', 'smaller');
+                } else {
+                    dojo.removeClass('remainingcards_wrap', 'smaller');
+                }
             }
 
             // Finally, add briscola if present
@@ -392,7 +400,7 @@ function (dojo, declare) {
 
             dojo.subscribe('newScores', this, 'notif_newScores');
 
-            this.notifqueue.setSynchronous('newScores', 4000);
+            this.notifqueue.setSynchronous('newScores', 2000);
             this.notifqueue.setSynchronous('trickWin', 1200);
             this.notifqueue.setSynchronous('giveAllCardsToPlayer', 1300);
         },
@@ -416,7 +424,7 @@ function (dojo, declare) {
 
             // Show deck on table
             this.buildDeckOnTable(notif.args);
-            this.addTooltip('mydeck_wrap', _('Deck with cards to be drawn'), '');
+            this.addTooltip('mydeck', _('Deck with cards to be drawn'), '');
         },
 
         notif_playCard : function(notif) {
@@ -482,6 +490,13 @@ function (dojo, declare) {
                     dojo.place(self.format_block('jstpl_remaining_cards', {
                         remainingcards: remainingCards
                     }), 'remainingcards_wrap');
+
+                    // Cosmetic
+                    if (remainingCards < 10) {
+                        dojo.addClass('remainingcards_wrap', 'smaller');
+                    } else {
+                        dojo.removeClass('remainingcards_wrap', 'smaller');
+                    }
                 } else {
                     // Destroy deck and empty briscola deck
                     dojo.destroy('mydeck');
@@ -489,7 +504,7 @@ function (dojo, declare) {
                     self.briscolaCard.removeAll();
 
                     // Remove tooltips
-                    self.removeTooltip('mydeck_wrap');
+                    self.removeTooltip('mydeck');
                 }
 
                 self.playerHand.addToStockWithId(self.getCardUniqueId(color, value), card.id);
