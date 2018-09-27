@@ -243,6 +243,40 @@
     text-align: center;
 }
 
+/*** Logs ***/
+div.briscola-logs-card-value,
+div.briscola-logs-card-suit {
+    display: inline-block;
+}
+
+div.briscola-logs-card-suit.italian > div.club {
+    height: 26px;
+    width: 14px;
+    background-size: cover;
+    background-image: url('img/italian-clubs-suit.png');
+}
+
+div.briscola-logs-card-suit.italian > div.coin {
+    height: 22px;
+    width: 14px;
+    background-size: cover;
+    background-image: url('img/italian-coins-suit.png');
+}
+
+div.briscola-logs-card-suit.italian > div.cup {
+    height: 22px;
+    width: 14px;
+    background-size: cover;
+    background-image: url('img/italian-cups-suit.png');
+}
+
+div.briscola-logs-card-suit.italian > div.spade {
+    height: 28px;
+    width: 14px;
+    background-size: cover;
+    background-image: url('img/italian-spades-suit.png');
+}
+
 /*** Misc ***/
 
 .tableWindow table {

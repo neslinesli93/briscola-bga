@@ -258,7 +258,7 @@ class BriscolaSuperamici extends Table
             $result['cardsindeck'] = count($cardsInDeck) - 1;
 
             $idCartaBriscola = self::getGameStateValue('briscolaCardId');
-            foreach ( $cardsInDeck as $cardId => $card ) {
+            foreach ($cardsInDeck as $cardId => $card) {
                 if ($cardId == $idCartaBriscola) {
                     $result['briscola'] = $card;
                     break;
@@ -324,8 +324,7 @@ class BriscolaSuperamici extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
-    function getPlayersToDirection()
-    {
+    function getPlayersToDirection() {
         $result = array();
 
         $players = self::loadPlayersBasicInfos();
@@ -357,6 +356,26 @@ class BriscolaSuperamici extends Table
         }
 
         return $result;
+    }
+
+    function getLogsPlayedCardValue($value) {
+        $italianValue = $this->italianValueLabel[$value];
+        $frenchValue = $this->frenchValueLabel[$value];
+
+        // We send both italian and french values, then
+        // the client will hide one of them using JS
+        return "<div class='briscola-logs-card-value italian' title='$italianValue'>$italianValue</div><div class='briscola-logs-card-value french' title='$frenchValue'>$frenchValue</div>";
+    }
+
+    function getLogsPlayedCardSuit($color) {
+        $italianSuit = ucfirst($this->italianColors[$color]['name']);
+        // Used for css class
+        $italianNonTranslatedSuit = $this->italianColors[$color]['nameorig'];
+
+        $frenchSuit = ucfirst($this->frenchColors[$color]['name']);
+        $frenchSuitIcon = $this->frenchIcons[$color];
+
+        return "<div class='briscola-logs-card-suit italian' title='$italianSuit'><div class='$italianNonTranslatedSuit'></div></div><div class='briscola-logs-card-suit french' title='$frenchSuit'>$frenchSuitIcon</div>";
     }
 
 
@@ -394,34 +413,26 @@ class BriscolaSuperamici extends Table
             self::setGameStateValue('firstPlayedColor', $currentCard['type'] );
         }
 
-        $message = clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}');
-        if ($isZombie) {
-            $message = clienttranslate('${player_name} automatically plays ${value_displayed} ${color_displayed}');
-        }
+        // Build played cards log
+        $cardValue = $currentCard['type_arg'];
+        $cardColor = $currentCard['type'];
 
-        // Visualize played cards using the appropriate deck
-        $deckType = self::getGameStateValue('deckType');
-        $cardValueDisplayed = null;
-        $cardColorDisplayed = null;
-        if ($deckType == ITALIAN_DECK) {
-            $cardValueDisplayed = $this->italianValueLabel[$currentCard['type_arg']];
-            $cardColorDisplayed = $this->italianColors[$currentCard['type']]['name'];
-        } else if ($deckType == FRENCH_DECK) {
-            $cardValueDisplayed = $this->values_label[$currentCard['type_arg']];
-            $cardColorDisplayed = $this->icons[$currentCard['type']];
+        $message = clienttranslate('${player_name} plays ${value_displayed} of ${color_displayed}');
+        if ($isZombie) {
+            $message = clienttranslate('${player_name} automatically plays ${value_displayed} of ${color_displayed}');
         }
 
         // And notify
         self::notifyAllPlayers('playCard', $message,
             array (
-            'i18n' => array ('color_displayed','value_displayed' ),
+            'i18n' => array('color_displayed','value_displayed'),
             'card_id' => $cardId,
             'player_id' => $playerId,
             'player_name' => self::getActivePlayerName(),
-            'value' => $currentCard['type_arg'],
-            'value_displayed' => $cardValueDisplayed,
-            'color' => $currentCard['type'],
-            'color_displayed' => $cardColorDisplayed
+            'value' => $cardValue,
+            'value_displayed' => self::getLogsPlayedCardValue($cardValue),
+            'color' => $cardColor,
+            'color_displayed' => self::getLogsPlayedCardSuit($cardColor)
             ));
 
         $this->gamestate->nextState('playCard');

@@ -55,6 +55,8 @@ function (dojo, declare) {
         
         setup: function(gamedatas)
         {
+            var self = this;
+
             this.deckType = gamedatas.deck_type;
             if (this.deckType === 'french') {
                 // Change all cards width, height and image to french ones
@@ -131,6 +133,17 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
+
+            // Interpolate logs
+            var logsIntepolatorFn = setInterval(function() {
+                var cardValues = dojo.query('.briscola-logs-card-value');
+                var cardSuits = dojo.query('.briscola-logs-card-suit');
+                if (cardValues.length > 0 || cardSuits.length > 0) {
+                    clearInterval(logsIntepolatorFn);
+
+                    self.interpolateLogs();
+                }
+            }, 100);
         },
        
 
@@ -292,6 +305,19 @@ function (dojo, declare) {
             dojo.addClass(card_div, 'bordered-card');
         },
 
+        interpolateLogs: function() {
+            // TODO: Implement it for real
+
+            // Hide french info from logs
+            dojo.query('.briscola-logs-card-value.french').style({
+                display: 'none'
+            });
+
+            dojo.query('.briscola-logs-card-suit.french').style({
+                display: 'none'
+            });
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
 
@@ -430,6 +456,8 @@ function (dojo, declare) {
         notif_playCard : function(notif) {
             // Play a card on the table
             this.playCardOnTable(notif.args.player_id, notif.args.color, notif.args.value, notif.args.card_id);
+
+            this.interpolateLogs();
         },
 
         notif_trickWin : function(notif) {

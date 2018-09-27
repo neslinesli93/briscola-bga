@@ -20,14 +20,22 @@
  */
 
 $this->italianColors = array(
-    1 => array('name' => clienttranslate('coin'),
-        'nametr' => self::_('coin')),
-    2 => array('name' => clienttranslate('cup'),
-        'nametr' => self::_('cup')),
-    3 => array('name' => clienttranslate('club'),
-        'nametr' => self::_('club')),
-    4 => array('name' => clienttranslate('spade'),
-        'nametr' => self::_('spade'))
+    1 => array(
+        'name' => clienttranslate('coin'),
+        'nametr' => self::_('coin'),
+        'nameorig' => 'coin'),
+    2 => array(
+        'name' => clienttranslate('cup'),
+        'nametr' => self::_('cup'),
+        'nameorig' => 'cup'),
+    3 => array(
+        'name' => clienttranslate('club'),
+        'nametr' => self::_('club'),
+        'nameorig' => 'club'),
+    4 => array(
+        'name' => clienttranslate('spade'),
+        'nametr' => self::_('spade'),
+        'nameorig' => 'spade')
 );
 
 $this->frenchColors = array(
