@@ -145,7 +145,9 @@ function (dojo, declare) {
             }, 100);
 
             // Add listener for deck style change
-            dojo.connect($('change_card_style'), 'onclick', this, 'onChangeCardStyle');
+            dojo
+                .query('.change-deck-style')
+                .connect('onclick', this, 'onChangeCardStyle');
         },
        
 
@@ -240,6 +242,8 @@ function (dojo, declare) {
             dojo.place(this.format_block('jstpl_cardontable', {
                 x : this.cardwidth * (value - 2),
                 y : this.cardheight * (color - 1),
+                value: value,
+                color: color,
                 player_id : playerId,
                 deck_type: this.deckType
             }), 'playertablecard_' + playerId);
@@ -261,11 +265,11 @@ function (dojo, declare) {
         },
 
         buildDeckOnTable: function(data) {
-            // Create single deck on table
-            dojo.place(this.format_block('jstpl_mydeck'), 'mydeck_wrap');
-
-            // Add deck's remaining cards label
             if (data.cardsindeck) {
+                // Create single deck on table
+                dojo.place(this.format_block('jstpl_mydeck'), 'mydeck_wrap');
+
+                // Add deck's remaining cards label
                 dojo.place(this.format_block('jstpl_remaining_cards', {
                     remainingcards: data.cardsindeck
                 }), 'remainingcards_wrap');
@@ -418,6 +422,11 @@ function (dojo, declare) {
         },
 
         onChangeCardStyle: function() {
+            var self = this;
+
+            // Please note that everything inside one branch needs to
+            // be copied inside all the other branches (it's just a big
+            // DOM manipulation mess)
             if (this.deckType === 'italian') {
                 // Switch to french
                 this.deckType = 'french';
@@ -456,6 +465,9 @@ function (dojo, declare) {
                         item.image = image;
                     }
 
+                    // Remove border on new cards
+                    deck.onItemCreate = null;
+
                     deck.updateDisplay();
                 }
 
@@ -465,19 +477,32 @@ function (dojo, declare) {
                     height: this.cardheight + 'px',
                     width: this.cardwidth + 'px'
                 });
+                // Remove border from existing cards
+                dojo.query('.stockitem').removeClass('bordered-card');
 
                 // Change class of the cards on the table
                 dojo.query('.cardontable').removeClass('italian');
                 dojo.query('.cardontable').addClass('french');
-                // Change style as well
-                dojo.query('.cardontable').style({
-                    'background-image': 'url(' + image + ')',
-                    height: this.cardheight + 'px',
-                    width: this.cardwidth + 'px'
+                // Change background-position attribute of cards in table,
+                // since they are not inside a deck!
+                // N.B: The formula is the same used in playCardOnTable
+                dojo.query('.cardontable').forEach(function(element) {
+                    var itemX = self.cardwidth * (parseInt(element.getAttribute('data-value')) - 2);
+                    var backgroundPositionX = '-' + itemX + 'px';
+
+                    var itemY = self.cardheight * (element.getAttribute('data-color') - 1);
+                    var backgroundPositionY = '-' + itemY + 'px';
+
+                    element.style.backgroundPosition = backgroundPositionX + ' ' + backgroundPositionY;
                 });
 
-                // Remove bordered-card class as well as listener
-                // TODO
+                // Move the dealer icon (14px is the tableplayer delta between french/italian)
+                var dealerPosition = dojo.getStyle('dealer_icon', 'top');
+                var newDealerPosition = parseFloat(dealerPosition) - 14;
+                dojo.setStyle('dealer_icon', 'top', newDealerPosition + 'px');
+
+                // Move the change deck box up
+                dojo.setStyle('change_deck_style_wrapper', 'top', 62 + 'px');
             } else {
                 // Switch to italian
                 this.deckType = 'italian';
@@ -516,6 +541,9 @@ function (dojo, declare) {
                         item.image = image;
                     }
 
+                    // Add border on new cards
+                    deck.onItemCreate = dojo.hitch(this, 'addBorder');
+
                     deck.updateDisplay();
                 }
 
@@ -525,19 +553,32 @@ function (dojo, declare) {
                     height: this.cardheight + 'px',
                     width: this.cardwidth + 'px'
                 });
+                // Add border to existing cards
+                dojo.query('.stockitem').addClass('bordered-card');
 
                 // Change class of the cards on the table
                 dojo.query('.cardontable').removeClass('french');
                 dojo.query('.cardontable').addClass('italian');
-                // Change style as well
-                dojo.query('.cardontable').style({
-                    'background-image': 'url(' + image + ')',
-                    height: this.cardheight + 'px',
-                    width: this.cardwidth + 'px'
+                // Change background-position attribute of cards in table,
+                // since they are not inside a deck!
+                // N.B: The formula is the same used in playCardOnTable
+                dojo.query('.cardontable').forEach(function(element) {
+                    var itemX = self.cardwidth * (parseInt(element.getAttribute('data-value')) - 2);
+                    var backgroundPositionX = '-' + itemX + 'px';
+
+                    var itemY = self.cardheight * (element.getAttribute('data-color') - 1);
+                    var backgroundPositionY = '-' + itemY + 'px';
+
+                    element.style.backgroundPosition = backgroundPositionX + ' ' + backgroundPositionY;
                 });
 
-                // Add bordered-card class as well as listener
-                // TODO
+                // Move the dealer icon (14px is the tableplayer delta between french/italian)
+                var dealerPosition = dojo.getStyle('dealer_icon', 'top');
+                var newDealerPosition = parseFloat(dealerPosition) + 14;
+                dojo.setStyle('dealer_icon', 'top', newDealerPosition + 'px');
+
+                // Move the change deck box up
+                dojo.setStyle('change_deck_style_wrapper', 'top', 88 + 'px');
             }
 
             // Transform logs as well

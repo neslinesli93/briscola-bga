@@ -42,7 +42,7 @@
             <span>{NOW_USING_DECK}</span>
             <strong id='current_style'></strong>
         </div>
-        <a id='change_deck_style' class='bgabutton bgabutton_gray'>
+        <a class='bgabutton bgabutton_gray change-deck-style'>
             <span>{CHANGE_DECK_STYLE}</span>
         </a>
     </div>
@@ -59,7 +59,7 @@
 
 // Javascript HTML templates
 
-var jstpl_cardontable = '<div class="cardontable ${deck_type}" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
+var jstpl_cardontable = '<div class="cardontable ${deck_type}" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px" data-value="${value}" data-color="${color}"></div>';
 var jstpl_mydeck = '<div class="mydeck" id="mydeck"></div>';
 var jstpl_remaining_cards = '<div id="remainingcards"><h4>${remainingcards}</h4></div>';
 var jstpl_player_board = '<div class="cp_board"><div id="tricks_p${id}" class="tricks_icon"></div> &#x00D7 <span id="trickscount_p${id}">0</span></div>';
