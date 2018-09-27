@@ -253,28 +253,36 @@ div.briscola-logs-card-suit.italian > div.club {
     height: 26px;
     width: 14px;
     background-size: cover;
-    background-image: url('img/italian-clubs-suit.png');
+    background-image: url('img/italian-club-suit.png');
 }
 
 div.briscola-logs-card-suit.italian > div.coin {
     height: 22px;
     width: 14px;
     background-size: cover;
-    background-image: url('img/italian-coins-suit.png');
+    background-image: url('img/italian-coin-suit.png');
 }
 
 div.briscola-logs-card-suit.italian > div.cup {
     height: 22px;
     width: 14px;
     background-size: cover;
-    background-image: url('img/italian-cups-suit.png');
+    background-image: url('img/italian-cup-suit.png');
 }
 
-div.briscola-logs-card-suit.italian > div.spade {
+div.briscola-logs-card-suit.italian > div.sword {
     height: 28px;
     width: 14px;
     background-size: cover;
-    background-image: url('img/italian-spades-suit.png');
+    background-image: url('img/italian-sword-suit.png');
+}
+
+/*** Change deck style ***/
+
+#change_deck_style_wrapper {
+    position: relative;
+    float: right;
+    top: 88px;
 }
 
 /*** Misc ***/
@@ -294,5 +302,9 @@ div.briscola-logs-card-suit.italian > div.spade {
 #teammate-hand .stockitem,
 #team-tricks-won .stockitem {
     cursor: auto;
+}
+
+.display-none {
+    display: none !important;
 }
 

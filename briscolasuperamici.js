@@ -32,12 +32,6 @@ function (dojo, declare) {
             this.frenchCardWidth = 72;
             this.frenchCardHeight = 96;
             this.frenchCardsImage = 'img/french-cards.jpg';
-
-            // Use italian as default
-            this.cardwidth = this.italianCardWidth;
-            this.cardheight = this.italianCardHeight;
-            this.cardsImage = this.italianCardsImage;
-            this.deckType = 'italian';
         },
         
         /*
@@ -57,17 +51,22 @@ function (dojo, declare) {
         {
             var self = this;
 
-            this.deckType = gamedatas.deck_type;
-            if (this.deckType === 'french') {
-                // Change all cards width, height and image to french ones
-                this.cardwidth = this.frenchCardWidth;
-                this.cardheight = this.frenchCardHeight;
-                this.cardsImage = this.frenchCardsImage;
-            } else if (this.deckType === 'italian') {
-                // Adjust deck size to fit italian cards
-                dojo.addClass('mydeck_wrap', 'italian');
-                dojo.addClass('briscola_wrap', 'italian');
-            }
+            // Use italian deck as default
+            this.deckType = 'italian';
+
+            $('current_style').innerHTML = _('Italian deck');
+
+            this.cardwidth = this.italianCardWidth;
+            this.cardheight = this.italianCardHeight;
+            this.cardsImage = this.italianCardsImage;
+
+            // Add right class to player table
+            dojo.query('.playertable').addClass('italian');
+            dojo.query('.playertablecard').addClass('italian');
+
+            // Adjust deck size to fit italian cards
+            dojo.addClass('mydeck_wrap', 'italian');
+            dojo.addClass('briscola_wrap', 'italian');
 
             var playersCount = 0;
             for (var pId in gamedatas.players) {
@@ -79,7 +78,7 @@ function (dojo, declare) {
 
                     // Set up players boards if needed
                     var playerBoardDiv = $('player_board_' + pId);
-                    dojo.place(this.format_block('jstpl_player_board', player), playerBoardDiv );
+                    dojo.place(this.format_block('jstpl_player_board', player), playerBoardDiv);
 
                     var div = $('trickscount_p' + pId);
                     if (div) {
@@ -144,6 +143,9 @@ function (dojo, declare) {
                     self.interpolateLogs();
                 }
             }, 100);
+
+            // Add listener for deck style change
+            dojo.connect($('change_card_style'), 'onclick', this, 'onChangeCardStyle');
         },
        
 
@@ -306,16 +308,29 @@ function (dojo, declare) {
         },
 
         interpolateLogs: function() {
-            // TODO: Implement it for real
+            if (this.deckType === 'italian') {
+                // Show italian logs
+                dojo.query('.briscola-logs-card-value.french').addClass('display-none');
+                dojo.query('.briscola-logs-card-suit.french').addClass('display-none');
 
-            // Hide french info from logs
-            dojo.query('.briscola-logs-card-value.french').style({
-                display: 'none'
-            });
+                dojo.query('.briscola-logs-card-value.italian').removeClass('display-none');
+                dojo.query('.briscola-logs-card-suit.italian').removeClass('display-none');
+            } else {
+                // Show french logs
+                dojo.query('.briscola-logs-card-value.italian').addClass('display-none');
+                dojo.query('.briscola-logs-card-suit.italian').addClass('display-none');
 
-            dojo.query('.briscola-logs-card-suit.french').style({
-                display: 'none'
-            });
+                dojo.query('.briscola-logs-card-value.french').removeClass('display-none');
+                dojo.query('.briscola-logs-card-suit.french').removeClass('display-none');
+            }
+
+            // dojo.query('.briscola-logs-card-value.french').style({
+            //     display: 'none'
+            // });
+            //
+            // dojo.query('.briscola-logs-card-suit.french').style({
+            //     display: 'none'
+            // });
         },
 
         ///////////////////////////////////////////////////
@@ -400,6 +415,134 @@ function (dojo, declare) {
                 }, function(is_error) {
                 });
             }
+        },
+
+        onChangeCardStyle: function() {
+            if (this.deckType === 'italian') {
+                // Switch to french
+                this.deckType = 'french';
+
+                $('current_style').innerHTML = _('French deck');
+
+                this.cardwidth = this.frenchCardWidth;
+                this.cardheight = this.frenchCardHeight;
+                this.cardsImage = this.frenchCardsImage;
+
+                // Add right class to player table
+                dojo.query('.playertable').removeClass('italian').addClass('french');
+                dojo.query('.playertablecard').removeClass('italian').addClass('french');
+
+                // Adjust deck size to remove fit for italian cards
+                dojo.removeClass('mydeck_wrap', 'italian');
+                dojo.addClass('mydeck_wrap', 'french');
+                dojo.removeClass('briscola_wrap', 'italian');
+                dojo.addClass('briscola_wrap', 'french');
+
+                // Replace deck images
+                var decks = [this.playerHand, this.briscolaCard];
+                var image = null;
+                for (var i in decks) {
+                    var deck = decks[i];
+                    deck.item_height = this.cardheight;
+                    deck.item_width = this.cardwidth;
+
+                    for (var j in deck.item_type) {
+                        var item = deck.item_type[j];
+
+                        if (!image) {
+                            image = item.image.replace(this.italianCardsImage, this.frenchCardsImage);
+                        }
+
+                        item.image = image;
+                    }
+
+                    deck.updateDisplay();
+                }
+
+                // Change style of the current visible cards in the stocks
+                dojo.query('.stockitem').style({
+                    'background-image': 'url(' + image + ')',
+                    height: this.cardheight + 'px',
+                    width: this.cardwidth + 'px'
+                });
+
+                // Change class of the cards on the table
+                dojo.query('.cardontable').removeClass('italian');
+                dojo.query('.cardontable').addClass('french');
+                // Change style as well
+                dojo.query('.cardontable').style({
+                    'background-image': 'url(' + image + ')',
+                    height: this.cardheight + 'px',
+                    width: this.cardwidth + 'px'
+                });
+
+                // Remove bordered-card class as well as listener
+                // TODO
+            } else {
+                // Switch to italian
+                this.deckType = 'italian';
+
+                $('current_style').innerHTML = _('Italian deck');
+
+                this.cardwidth = this.italianCardWidth;
+                this.cardheight = this.italianCardHeight;
+                this.cardsImage = this.italianCardsImage;
+
+                // Add right class to player table
+                dojo.query('.playertable').removeClass('french').addClass('italian');
+                dojo.query('.playertablecard').removeClass('french').addClass('italian');
+
+                // Adjust deck size to fit italian cards
+                dojo.removeClass('mydeck_wrap', 'french');
+                dojo.addClass('mydeck_wrap', 'italian');
+                dojo.removeClass('briscola_wrap', 'french');
+                dojo.addClass('briscola_wrap', 'italian');
+
+                // Replace deck images
+                var decks = [this.playerHand, this.briscolaCard];
+                var image = null;
+                for (var i in decks) {
+                    var deck = decks[i];
+                    deck.item_height = this.cardheight;
+                    deck.item_width = this.cardwidth;
+
+                    for (var j in deck.item_type) {
+                        var item = deck.item_type[j];
+
+                        if (!image) {
+                            image = item.image.replace(this.frenchCardsImage, this.italianCardsImage);
+                        }
+
+                        item.image = image;
+                    }
+
+                    deck.updateDisplay();
+                }
+
+                // Change style of the current visible cards in the stocks
+                dojo.query('.stockitem').style({
+                    'background-image': 'url(' + image + ')',
+                    height: this.cardheight + 'px',
+                    width: this.cardwidth + 'px'
+                });
+
+                // Change class of the cards on the table
+                dojo.query('.cardontable').removeClass('french');
+                dojo.query('.cardontable').addClass('italian');
+                // Change style as well
+                dojo.query('.cardontable').style({
+                    'background-image': 'url(' + image + ')',
+                    height: this.cardheight + 'px',
+                    width: this.cardwidth + 'px'
+                });
+
+                // Add bordered-card class as well as listener
+                // TODO
+            }
+
+            // Transform logs as well
+            // N.B: This has to be called after new deckType has been declared
+            this.interpolateLogs();
         },
         
         ///////////////////////////////////////////////////

@@ -46,4 +46,14 @@ for y in range(0, Y * ROWS, Y):
 	region = src.crop(src_box)
 	dst.paste(region, dst_box)
 
+# Swap first and last row of cards, due to suit order in french cards
+first_row_region = (0, 0, X * NEW_COLS, Y)
+first_row = dst.crop(first_row_region)
+
+last_row_region = (0, Y * ROWS - Y, X * NEW_COLS, Y * ROWS)
+last_row = dst.crop(last_row_region)
+
+dst.paste(first_row, last_row_region)
+dst.paste(last_row, first_row_region)
+
 dst.save("italian-output.jpg")

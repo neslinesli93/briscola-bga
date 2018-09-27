@@ -24,11 +24,11 @@
 
     <div id="playertables">
         <!-- BEGIN player -->
-        <div class="playertable whiteblock playertable_{DIR} {DECK_TYPE}">
+        <div class="playertable whiteblock playertable_{DIR}">
             <div class="playertablename" style="color:#{PLAYER_COLOR}">
                 {PLAYER_NAME}
             </div>
-            <div class="playertablecard {DECK_TYPE}" id="playertablecard_{PLAYER_ID}">
+            <div class="playertablecard" id="playertablecard_{PLAYER_ID}">
             </div>
         </div>
         <!-- END player -->
@@ -37,11 +37,22 @@
         <div id="orientation" class="counterclockwise-icon"></div>
     </div>
 
+    <div id="change_deck_style_wrapper" class="whiteblock">
+        <div>
+            <span>{NOW_USING_DECK}</span>
+            <strong id='current_style'></strong>
+        </div>
+        <a id='change_deck_style' class='bgabutton bgabutton_gray'>
+            <span>{CHANGE_DECK_STYLE}</span>
+        </a>
+    </div>
+
     <div id="myhand_wrap" class="whiteblock">
         <h3>{MY_HAND}</h3>
         <div id="myhand">
         </div>
     </div>
+
 </div>
 
 <script type="text/javascript">

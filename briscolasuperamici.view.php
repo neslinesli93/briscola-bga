@@ -44,15 +44,6 @@
         // Arrange players so that current player is always on south
         $players_to_dir = $this->game->getPlayersToDirection();
 
-        // Get deck type
-        $deckTypeForPlayerBlock = null;
-        $deckType = $this->game->getGameStateValue('deckType');
-        if ($deckType == ITALIAN_DECK) {
-            $deckTypeForPlayerBlock = 'italian';
-        } else if ($deckType == FRENCH_DECK) {
-            $deckTypeForPlayerBlock = 'french';
-        }
-
         // This will inflate our player block with actual players data
         $this->page->begin_block($template, "player");
         foreach ($players_to_dir as $player_id => $dir) {
@@ -60,13 +51,15 @@
                 "PLAYER_ID" => $player_id,
                 "PLAYER_NAME" => $players[$player_id]['player_name'],
                 "PLAYER_COLOR" => $players[$player_id]['player_color'],
-                "DIR" => $dir,
-                "DECK_TYPE" => $deckTypeForPlayerBlock
+                "DIR" => $dir
             ));
         }
 
-        // This will make our My Hand text translatable
+        // i18n stuff
         $this->tpl['MY_HAND'] = self::_("My hand");
+        $this->tpl['NOW_USING_DECK'] = self::_("Now using: ");
+        $this->tpl['MY_HAND'] = self::_("My hand");
+        $this->tpl['CHANGE_DECK_STYLE'] = self::_("Change deck style");
 
         /*********** Do not change anything below this line  ************/
   	}
