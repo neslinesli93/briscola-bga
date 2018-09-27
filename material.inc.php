@@ -54,10 +54,10 @@ $this->frenchColors = array(
 );
 
 $this->frenchIcons = array(
-    1 => '<span style="color: black;">'.json_decode('"' . '\u2660' . '"').'</span>' , //spade
-    2 => '<span style="color: red;">'.json_decode('"' . '\u2665' . '"').'</span>' , //heart
-    3 => '<span style="color: black;">'.json_decode('"' . '\u2663' . '"').'</span>' , //club
-    4 => '<span style="color: red;">'.json_decode('"' . '\u2666' . '"').'</span>' , //diamond
+    1 => '<span style="color: black;" class="french-suit-log">'.json_decode('"' . '\u2660' . '"').'</span>' , //spade
+    2 => '<span style="color: red;" class="french-suit-log">'.json_decode('"' . '\u2665' . '"').'</span>' , //heart
+    3 => '<span style="color: black;" class="french-suit-log">'.json_decode('"' . '\u2663' . '"').'</span>' , //club
+    4 => '<span style="color: red;" class="french-suit-log">'.json_decode('"' . '\u2666' . '"').'</span>' , //diamond
 );
 
 $this->italianValueLabel = array(

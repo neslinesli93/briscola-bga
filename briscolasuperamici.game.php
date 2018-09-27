@@ -42,10 +42,6 @@ define("BIG_SCORE", 100);
 define("PERFECT_SCORE", 120);
 define("ALL_BRISCOLA_CARDS", 10);
 
-// Deck type
-define("ITALIAN_DECK", 1);
-define("FRENCH_DECK", 2);
-
 class BriscolaSuperamici extends Table
 {
 	function __construct( )
@@ -69,8 +65,7 @@ class BriscolaSuperamici extends Table
             "showCardsPhaseDone" => 17,
             "winningHandsToEndGame" => 18,
             "roundsNumber" => 100,
-            "playersTeams" => 101,
-            "deckType" => 102
+            "playersTeams" => 101
         ));
 
         // Init $this->cards to be a deck
@@ -197,14 +192,7 @@ class BriscolaSuperamici extends Table
         // Create cards
         $cards = array ();
 
-        $colors = null;
-        $deckType = self::getGameStateValue('deckType');
-        if ($deckType == ITALIAN_DECK) {
-            $colors = $this->italianColors;
-        } else if ($deckType == FRENCH_DECK) {
-            $colors = $this->frenchColors;
-        }
-
+        $colors = $this->italianColors;
         foreach ($colors as $colorId => $color) {
             // spade, heart, diamond, club
             for ($value = 2; $value <= 11; $value ++) {
@@ -272,14 +260,6 @@ class BriscolaSuperamici extends Table
 
         // Dealer info
         $result['dealer'] = self::getGameStateValue('dealer');
-
-        // Deck type info
-        $deckType = self::getGameStateValue('deckType');
-        if ($deckType == ITALIAN_DECK) {
-            $result['deck_type'] = 'italian';
-        } else if ($deckType == FRENCH_DECK) {
-            $result['deck_type'] = 'french';
-        }
 
         return $result;
     }

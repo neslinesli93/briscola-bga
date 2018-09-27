@@ -84,15 +84,6 @@ $game_options = array(
             )
         ),
         'default' => 1
-    ),
-
-    102=> array(
-        'name' => totranslate('Deck'),
-        'values' => array(
-            1 => array('name' => totranslate('Italian')),
-            2 => array('name' => totranslate('French'))
-        ),
-        'default' => 1
     )
 );
 

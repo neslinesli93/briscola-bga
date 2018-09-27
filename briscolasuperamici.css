@@ -245,6 +245,10 @@
 }
 
 /*** Logs ***/
+span.french-suit-log {
+    font-size: 22px;
+}
+
 div.briscola-logs-card-value,
 div.briscola-logs-card-suit {
     display: inline-block;
