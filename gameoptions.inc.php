@@ -87,4 +87,13 @@ $game_options = array(
     )
 );
 
-
+$game_preferences = array(
+    100 => array(
+        'name' => totranslate('Deck style'),
+        'needReload' => false,
+        'values' => array(
+            1 => array('name' => totranslate('Italian deck')),
+            2 => array('name' => totranslate('French deck'))
+        )
+    ),
+);

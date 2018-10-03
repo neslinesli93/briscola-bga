@@ -25,10 +25,12 @@ function (dojo, declare) {
     return declare("bgagame.briscolasuperamici", ebg.core.gamegui, {
         constructor: function(){
             // Declare cards width/height for various decks type
+            this.italianDeckId = 1;
             this.italianCardWidth = 72;
             this.italianCardHeight = 123;
             this.italianCardsImage = 'img/italian-cards.jpg';
 
+            this.frenchDeckId = 2;
             this.frenchCardWidth = 72;
             this.frenchCardHeight = 96;
             this.frenchCardsImage = 'img/french-cards.jpg';
@@ -52,6 +54,7 @@ function (dojo, declare) {
             var self = this;
 
             // Use italian deck as default
+            this.deckId = this.italianDeckId;
             this.deckType = 'italian';
 
             $('current_style').innerHTML = _('Italian deck');
@@ -117,10 +120,6 @@ function (dojo, declare) {
             this.buildDeckOnTable(gamedatas);
             this.addTooltip('mydeck', _('Deck with cards to be drawn'), '');
 
-            // Add dealer
-            this.setDealer(gamedatas.dealer);
-            this.addTooltip('dealer_icon', _('Dealer for this hand'), '');
-
             // Add tooltips
             this.addTooltipToClass('playertablecard', _("Card played on the table"), '');
             this.addTooltip('briscola_wrap', _("Briscola card (to be drawn when the deck is empty)"), '');
@@ -147,7 +146,26 @@ function (dojo, declare) {
             // Add listener for deck style change
             dojo
                 .query('.change-deck-style')
-                .connect('onclick', this, 'onChangeCardStyle');
+                .connect('onclick', this, 'onClickChangeDeckStyleButton');
+
+            // Add another listener when a user change his preferences
+            dojo.connect($('preference_control_100'), 'onchange', this, 'onChangeUserPreferenceDeckStyle');
+
+            // Now check if user preference regarding deck style is different
+            // fro the one we assumed (italian).
+            // N.B: We need to do this now because decks and all the other
+            // structures have been created
+            var userDeckPreference = this.prefs[100].value;
+            if (userDeckPreference == this.frenchDeckId) {
+                this.changeDeckStyle();
+            }
+
+            // Add dealer
+            // N.B: We do this now, after possibly changing deck style
+            // due to the fact that it's an animation and it needs the
+            // correct information in order to display the icon correctly
+            this.setDealer(gamedatas.dealer);
+            this.addTooltip('dealer_icon', _('Dealer for this hand'), '');
         },
        
 
@@ -327,14 +345,6 @@ function (dojo, declare) {
                 dojo.query('.briscola-logs-card-value.french').removeClass('display-none');
                 dojo.query('.briscola-logs-card-suit.french').removeClass('display-none');
             }
-
-            // dojo.query('.briscola-logs-card-value.french').style({
-            //     display: 'none'
-            // });
-            //
-            // dojo.query('.briscola-logs-card-suit.french').style({
-            //     display: 'none'
-            // });
         },
 
         ///////////////////////////////////////////////////
@@ -371,6 +381,8 @@ function (dojo, declare) {
                     dojo.destroy('teammate-hand');
                 }
             });
+            // Add a global property to programmatically show/hide the dialog
+            this.teammateCardsDialog = teammateCardsDialog;
 
             var html = '<div id="teammate-hand"></div>';
             teammateCardsDialog.attr("content", html);
@@ -395,6 +407,8 @@ function (dojo, declare) {
                     dojo.destroy('team-tricks-won');
                 }
             });
+            // Add a global property to programmatically show/hide the dialog
+            this.teamTricksWonDialog = teamTricksWonDialog;
 
             var html = '<div id="team-tricks-won"></div>';
             teamTricksWonDialog.attr("content", html);
@@ -421,14 +435,73 @@ function (dojo, declare) {
             }
         },
 
-        onChangeCardStyle: function() {
+        onClickChangeDeckStyleButton: function() {
+            // This event is triggered from the button on the bottom-right
+            // part of the table, so we need to change the deck as well
+            // as user preference.
+            // We do so by triggering a `onchange` event on the user prefs select
+            // Get the next style id in the list
+            if (this.deckId === this.italianDeckId) {
+                var newDeckId = this.frenchDeckId;
+            } else {
+                var newDeckId = this.italianDeckId;
+            }
+
+            // Set that new style as the player preference
+            dojo.query('#preference_control_100 > option[value="' + newDeckId + '"], #preference_fontrol_100 > option[value="' + newDeckId + '"]').forEach(function(node) {
+                dojo.attr(node, 'selected', true);
+            });
+
+            // Trigger the onchange event to effectively change the style
+            var select = $('preference_control_100');
+            // IE does things differently
+            if (dojo.isIE) {
+                select.fireEvent("onchange");
+            }
+            else{ // Not IE
+                var event = document.createEvent("HTMLEvents");
+                event.initEvent("change", false, true);
+                select.dispatchEvent(event);
+            }
+        },
+
+        onChangeUserPreferenceDeckStyle: function(event) {
+            var select = event.currentTarget;
+            var newDeckId = select.options[select.selectedIndex].value;
+
+            // Don't do anything if the option is not actually changed
+            if (newDeckId == this.deckId) {
+                return;
+            }
+
+            // Set that new style as the player preference
+            dojo.query('#preference_control_100 > option[value="' + newDeckId + '"], #preference_fontrol_100 > option[value="' + newDeckId + '"]').forEach(function(node) {
+                dojo.attr(node, 'selected', true);
+            });
+
+            // Change style of cards on table
+            this.changeDeckStyle();
+        },
+
+        changeDeckStyle: function() {
             var self = this;
 
-            // Please note that everything inside one branch needs to
+            // Check if one of the modals is opened and close it
+            // to prevent graphical overlapping of cards
+            if (this.teamTricksWonDialog && this.teamTricksWonDialog.open) {
+                this.teamTricksWonDialog.destroy();
+            }
+
+            if (this.teammateCardsDialog && this.teammateCardsDialog.open) {
+                this.teammateCardsDialog.destroy();
+            }
+
+            // Please note that everything inside one `if` branch needs to
             // be copied inside all the other branches (it's just a big
             // DOM manipulation mess)
             if (this.deckType === 'italian') {
                 // Switch to french
+                this.deckId = this.frenchDeckId;
                 this.deckType = 'french';
 
                 $('current_style').innerHTML = _('French deck');
@@ -505,6 +578,7 @@ function (dojo, declare) {
                 dojo.setStyle('change_deck_style_wrapper', 'top', 62 + 'px');
             } else {
                 // Switch to italian
+                this.deckId = this.italianDeckId;
                 this.deckType = 'italian';
 
                 $('current_style').innerHTML = _('Italian deck');
